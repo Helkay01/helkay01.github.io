@@ -39,9 +39,7 @@ function requestGeolocation() {
 	
     /* options (optional) */
     {
-      enableHighAccuracy: true, // faster & lower-power; change to true if you need GPS
-                  // abort after 5 s if no fix
-                  // don’t use a cached position
+      enableHighAccuracy: true,
     }
     
   );
@@ -54,9 +52,12 @@ function requestGeolocation() {
 
 //Permission granted. Get Location
 function getLocation(lat, lon) {
-	let fetchloc = fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lon+"&addressdetails=1");
-	let fetchres = fetchloc.json();
-	alert(fetchres); 
+
+	fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1')
+	.then(res => res.json())
+	.then(data => {
+		alert("Approximate location:", data);
+	});
 }
 
 

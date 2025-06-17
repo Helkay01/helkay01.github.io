@@ -10,12 +10,8 @@
 <p id="status">Requesting permission…</p>
 
 <script>
-/**
- * Ask for the user’s location as soon as the page loads.
- * The first call to `getCurrentPosition()` triggers the browser’s native
- * permission dialog (Allow / Block) just like the one in your screenshot.
- */
-(function requestGeolocation() {
+
+function requestGeolocation() {
   const statusEl = document.getElementById('status');
 
   // Make sure the API exists
@@ -24,40 +20,50 @@
     return;
   }
 
-  // Trigger the permission prompt
+
   navigator.geolocation.getCurrentPosition(
-    /* success callback */
+
     (pos) => {
       const { latitude, longitude } = pos.coords;
       statusEl.innerHTML =
         `✅ Permission granted.<br>Latitude: ${latitude}<br>Longitude: ${longitude}`;
+    
+    	getLocation(latitude, longitude);
     },
 
     /* error callback */
-    (err) => {
-      switch (err.code) {
-        case err.PERMISSION_DENIED:
-          statusEl.textContent = '❌ You blocked the location request.';
-          break;
-        case err.POSITION_UNAVAILABLE:
-          statusEl.textContent = '⚠️ Location information is unavailable.';
-          break;
-        case err.TIMEOUT:
-          statusEl.textContent = '⏱️ The request timed out.';
-          break;
-        default:
-          statusEl.textContent = '❓ An unknown error occurred.';
-      }
-    },
+	(err) => {
+		statusEl.textContent = '❌ You blocked the location request.';
 
+    },
+	
     /* options (optional) */
     {
-      enableHighAccuracy: false, // faster & lower-power; change to true if you need GPS
+      enableHighAccuracy: true, // faster & lower-power; change to true if you need GPS
       timeout: 5000,            // abort after 5 s if no fix
       maximumAge: 0             // don’t use a cached position
     }
+    
   );
-})();
+    
+  
+};
+
+
+
+
+//Permission granted. Get Location
+function getLocation(lat, lon) {
+	let fetchloc = fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lon+"&addressdetails=1");
+	let fetchres = fetchloc.json();
+	alert(fetchres); 
+}
+
+
+
+let requestGeo = requestGeolocation();
+
+
 </script>
 
 </body>

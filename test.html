@@ -60,13 +60,11 @@ function requestGeolocation() {
 
 //Permission granted. Get Location
 function getLocation(lat, lon) {
-	$.ajax({
-		url: 'https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1',
-		method: 'GET',
-		success:function(data) {
-			alert(data);
-		}
-	});
+	
+		let url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1',
+
+
+			alert(url);
 }
 
 

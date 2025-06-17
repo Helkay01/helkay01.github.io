@@ -27,7 +27,7 @@ function requestGeolocation() {
       const { latitude, longitude } = pos.coords;
       statusEl.innerHTML =
         `✅ Permission granted.<br>Latitude: ${latitude}<br>Longitude: ${longitude}`;
-    
+    	alert(latitude);
     	getLocation(latitude, longitude);
     },
 

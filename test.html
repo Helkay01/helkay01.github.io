@@ -62,7 +62,16 @@ async function getLocation(lat, lon) {
     	
     	const response = await fetch(url);
     	const data = await response.json();
-    	alert(data.address.country);
+    	
+    	let village = address.village;
+    	let county = address.county;
+    	let state = address.state;
+    	let country = address.country; 
+    	
+    	
+    	
+    	
+    	alert(response.status);
     	return data;
   } catch (error) {
     	console.error('Error fetching location:', error);

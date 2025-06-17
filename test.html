@@ -54,7 +54,7 @@ function requestGeolocation() {
 async function getLocation(lat, lon) {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
     );
     const data = await response.json();
     	alert('Location data:', data);

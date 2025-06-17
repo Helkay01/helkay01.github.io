@@ -1,23 +1,64 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  
-<script type="text/javascript">
-//alert('ourside')
-  window.onload = function() {
-//alert('from url');
-
-  document.getElementById('d').innerHTML = "FROM JS";
-  
-}
-
-</script>
-
+  <meta charset="utf-8">
+  <title>Geolocation Permission Demo</title>
 </head>
 <body>
 
-<div id="d"></div>
-  
+<h2>Automatic geolocation request on page load</h2>
+<p id="status">Requesting permission…</p>
+
+<script>
+/**
+ * Ask for the user’s location as soon as the page loads.
+ * The first call to `getCurrentPosition()` triggers the browser’s native
+ * permission dialog (Allow / Block) just like the one in your screenshot.
+ */
+(function requestGeolocation() {
+  const statusEl = document.getElementById('status');
+
+  // Make sure the API exists
+  if (!('geolocation' in navigator)) {
+    statusEl.textContent = 'Geolocation is not supported in this browser.';
+    return;
+  }
+
+  // Trigger the permission prompt
+  navigator.geolocation.getCurrentPosition(
+    /* success callback */
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      statusEl.innerHTML =
+        `✅ Permission granted.<br>Latitude: ${latitude}<br>Longitude: ${longitude}`;
+    },
+
+    /* error callback */
+    (err) => {
+      switch (err.code) {
+        case err.PERMISSION_DENIED:
+          statusEl.textContent = '❌ You blocked the location request.';
+          break;
+        case err.POSITION_UNAVAILABLE:
+          statusEl.textContent = '⚠️ Location information is unavailable.';
+          break;
+        case err.TIMEOUT:
+          statusEl.textContent = '⏱️ The request timed out.';
+          break;
+        default:
+          statusEl.textContent = '❓ An unknown error occurred.';
+      }
+    },
+
+    /* options (optional) */
+    {
+      enableHighAccuracy: false, // faster & lower-power; change to true if you need GPS
+      timeout: 5000,            // abort after 5 s if no fix
+      maximumAge: 0             // don’t use a cached position
+    }
+  );
+})();
+</script>
+
 </body>
 </html>

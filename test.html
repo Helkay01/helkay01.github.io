@@ -176,9 +176,13 @@ function getLeakIP() {
 	
 			const publicIP = await getPublicIP();
 			alert(publicIP) 
+			
+			if(!publicIP) {
+				alert("unknown");
+			}
 	
 		} catch (err) {
-		
+			
 		}
 	}
 	

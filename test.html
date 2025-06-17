@@ -61,7 +61,7 @@ function requestGeolocation() {
 //Permission granted. Get Location
 function getLocation(lat, lon) {
 	
-		let url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1';
+		let url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&addressdetails=1';
 
 
 			alert(url);

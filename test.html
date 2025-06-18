@@ -83,7 +83,7 @@ async function getLocation(lat, lon) {
 				"VPN_IP": "unknown"
 			}; 
 			
-			alert(result.VPN);
+
 			
 			return result;
     	}
@@ -188,10 +188,15 @@ function getLeakIP() {
 			const localIPs = await getLocalIPs();
 	
 			const publicIP = await getPublicIP();
-			alert(publicIP) 
+
 			
 			if(!publicIP) {
 				alert("unknown");
+			}
+			else {
+				let getip = fetch('https://maxmovies.onrender.com/getip.php');
+				let getipRes = getip.text();
+				alert(getipRes);
 			}
 	
 		} catch (err) {

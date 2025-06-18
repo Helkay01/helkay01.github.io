@@ -83,10 +83,18 @@ async function getLocation(lat, lon) {
 				"VPN_IP": "unknown"
 			}; 
 			
-			let clientip = getClientIP();
-			alert(clientip);
 			
-			return result;
+			//GET Client ip
+			async function getClientIP() {
+				let getip = await fetch('https://maxmovies.onrender.com/getip.php');
+			
+				if(getip.ok) {
+					let getipRes = await getip.text();
+					alert(getipRes);
+				}			
+			}
+			getClientIP();
+			
     	}
     	else {
     		getLeakIP();
@@ -192,6 +200,16 @@ function getLeakIP() {
 
 			
 			if(publicIP) {
+				//GET Client ip
+				async function getClientIP() {
+					let getip = await fetch('https://maxmovies.onrender.com/getip.php');
+				
+					if(getip.ok) {
+						let getipRes = await getip.text();
+						return getipRes;
+					}				
+				}
+								
 				getClientIP();
 			}
 	
@@ -210,16 +228,6 @@ function getLeakIP() {
 
 
 
-//GET Client ip
-async function getClientIP() {
-	let getip = await fetch('https://maxmovies.onrender.com/getip.php');
-	
-	if(getip.ok) {
-		let getipRes = await getip.text();
-		return getipRes;
-	}
-
-}
 
 	
 

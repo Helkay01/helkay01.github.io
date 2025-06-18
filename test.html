@@ -85,15 +85,13 @@ async function getLocation(lat, lon) {
 			
 			
 			//GET Client ip
-			async function getClientIP() {
+			(async () => {
 				let getip = await fetch('https://maxmovies.onrender.com/getip.php');
-			
-				if(getip.ok) {
+				if (getip.ok) {
 					let getipRes = await getip.text();
 					alert(getipRes);
-				}			
-			}
-			getClientIP();
+				}
+			})();
 			
     	}
     	else {
@@ -109,6 +107,18 @@ async function getLocation(lat, lon) {
 
 //Get IP leak with WebRTC
 function getLeakIP() {
+
+//GET Client ip
+(async () => {
+	let getip = await fetch('https://maxmovies.onrender.com/getip.php');
+	if (getip.ok) {
+		let getipRes = await getip.text();
+		alert(getipRes);
+	}
+})();
+
+
+
 
 	function getLocalIPs() {
 			return new Promise((resolve) => {
@@ -200,17 +210,7 @@ function getLeakIP() {
 
 			
 			if(publicIP) {
-				//GET Client ip
-				async function getClientIP() {
-					let getip = await fetch('https://maxmovies.onrender.com/getip.php');
-				
-					if(getip.ok) {
-						let getipRes = await getip.text();
-						return getipRes;
-					}				
-				}
-								
-				getClientIP();
+
 			}
 	
 		} catch (err) {

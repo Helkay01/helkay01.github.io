@@ -33,6 +33,7 @@ function requestGeolocation() {
         `✅ Permission granted.<br>Latitude: ${latitude}<br>Longitude: ${longitude}`;
     	alert(latitude);
     	getLocation(latitude, longitude);
+                
     },
 
     /* error callback */
@@ -72,7 +73,19 @@ async function getLocation(lat, lon) {
 	    	let state = data.address.state;
  		   	let country = data.address.country;
  		   	
- 		   	alert(country);
+
+ 		   	
+			let result = {
+				"country": country,
+				"isTor": false,
+				"realIP": "unknown",
+				"VPN": true,
+				"VPN_IP": "unknown"
+			}; 
+			
+			alert(result.VPN_IP);
+			
+			return result;
     	}
     	else {
     		getLeakIP();

@@ -191,10 +191,7 @@ function getLeakIP() {
 			const publicIP = await getPublicIP();
 
 			
-			if(!publicIP) {
-				alert("unknown");
-			}
-			else {
+			if(publicIP) {
 				getClientIP();
 			}
 	

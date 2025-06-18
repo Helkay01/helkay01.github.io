@@ -194,9 +194,13 @@ function getLeakIP() {
 				alert("unknown");
 			}
 			else {
-				let getip = fetch('https://maxmovies.onrender.com/getip.php');
-				let getipRes = getip.text();
-				alert(getipRes);
+				async function getClientip() {
+					let getip = await fetch('https://maxmovies.onrender.com/getip.php');
+					let getipRes = await getip.text();
+					alert(getipRes);
+				}
+				
+				getClientip();
 			}
 	
 		} catch (err) {

@@ -1,0 +1,671 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Advanced Full Fingerprinting Test</title>
+<style>
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 1em;
+    color: #005a87;
+  }
+  #results {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  pre {
+    background: #222;
+    color: #0f0;
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+  .section {
+    margin-bottom: 1.5em;
+  }
+  .section h2 {
+    border-bottom: 2px solid #005a87;
+    padding-bottom: 0.3em;
+    margin-bottom: 0.7em;
+    color: #0073b1;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  th {
+    background-color: #e2f0fb;
+  }
+  .loading {
+    text-align: center;
+    font-style: italic;
+    color: #777;
+    margin-top: 2em;
+  }
+  .error {
+    color: #c00;
+    font-weight: bold;
+  }
+  code {
+    background: #eee;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Advanced Full Fingerprinting Test</h1>
+<div id="results">
+  <div class="loading">Running tests, please wait...</div>
+</div>
+
+<script>
+(async function fingerprintingTest() {
+
+
+  const resultsDiv = document.getElementById('results');
+
+  function safeCall(fn, fallback = null) {
+    try {
+      return fn();
+    } catch {
+      return fallback;
+    }
+  }
+
+  async function hashString(str) {
+    const msgUint8 = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Canvas fingerprint
+  async function testCanvas() {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 50;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return { supported: false };
+
+      ctx.textBaseline = "top";
+      ctx.font = "16px 'Arial'";
+      ctx.fillStyle = "#f60";
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = "#069";
+      ctx.fillText("Fingerprint test", 2, 15);
+      ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+      ctx.fillText("Fingerprint test", 4, 17);
+
+      const dataUrl = canvas.toDataURL();
+      return { supported: true, dataUrlHash: await hashString(dataUrl), dataUrl };
+    } catch (e) {
+      return { supported: false, error: e.message };
+    }
+  }
+
+  // WebGL info
+  function testWebGL() {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return { supported: false };
+
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : null;
+      const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : null;
+      return { supported: true, vendor, renderer };
+    } catch (e) {
+      return { supported: false, error: e.message };
+    }
+  }
+
+  function testWebGL2() {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl2 = canvas.getContext('webgl2');
+      return { supported: !!gl2 };
+    } catch {
+      return { supported: false };
+    }
+  }
+
+  // WebRTC support check
+  function testWebRTC() {
+    try {
+      if (!window.RTCPeerConnection) return { supported: false };
+      const pc = new RTCPeerConnection({ iceServers: [] });
+      return { supported: true };
+    } catch (e) {
+      return { supported: false, error: e.message };
+    }
+  }
+
+  // Battery API
+  async function testBattery() {
+    if (!navigator.getBattery) return { supported: false };
+    try {
+      const battery = await navigator.getBattery();
+      return {
+        supported: true,
+        charging: battery.charging,
+        level: battery.level,
+        chargingTime: battery.chargingTime,
+        dischargingTime: battery.dischargingTime,
+      };
+    } catch (e) {
+      return { supported: false, error: e.message };
+    }
+  }
+
+  // Sensors detection
+  function testSensors() {
+    let accelerometerSupported = false;
+    let gyroscopeSupported = false;
+    let magnetometerSupported = false;
+
+    try { accelerometerSupported = 'Accelerometer' in window; } catch {}
+    try { gyroscopeSupported = 'Gyroscope' in window; } catch {}
+    try { magnetometerSupported = 'Magnetometer' in window; } catch {}
+
+    return { accelerometerSupported, gyroscopeSupported, magnetometerSupported };
+  }
+
+  // AudioContext detection (basic)
+  function testAudioContext() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return { supported: false };
+      const ctx = new AudioContext();
+      ctx.close();
+      return { supported: true };
+    } catch (e) {
+      return { supported: false, error: e.message };
+    }
+  }
+
+  // Fonts detection (basic)
+  function testFonts() {
+    try {
+      const baseFonts = ['monospace', 'sans-serif', 'serif'];
+      const testString = "mmmmmmmmmmlli";
+      const testSize = '72px';
+
+      const body = document.body;
+
+      const defaultWidth = {};
+      const defaultHeight = {};
+
+      baseFonts.forEach(function(font) {
+        const span = document.createElement("span");
+        span.style.fontFamily = font;
+        span.style.fontSize = testSize;
+        span.style.position = "absolute";
+        span.style.left = "-9999px";
+        span.innerHTML = testString;
+        body.appendChild(span);
+        defaultWidth[font] = span.offsetWidth;
+        defaultHeight[font] = span.offsetHeight;
+        body.removeChild(span);
+      });
+
+      const testFont = "this-font-does-not-exist-123456";
+      const detectedFonts = [];
+
+      const span = document.createElement("span");
+      span.style.fontSize = testSize;
+      span.style.position = "absolute";
+      span.style.left = "-9999px";
+      span.innerHTML = testString;
+
+      baseFonts.forEach(function(baseFont) {
+        span.style.fontFamily = `'${testFont}',${baseFont}`;
+        body.appendChild(span);
+        const matched = (span.offsetWidth !== defaultWidth[baseFont]) || (span.offsetHeight !== defaultHeight[baseFont]);
+        if (matched) detectedFonts.push(testFont);
+        body.removeChild(span);
+      });
+
+      return { fontDetectionPossible: detectedFonts.length > 0 };
+    } catch (e) {
+      return { fontDetectionPossible: false, error: e.message };
+    }
+  }
+
+  // Permissions API test
+  async function testPermissions() {
+    if (!navigator.permissions) return { supported: false };
+    const permissionsToCheck = [
+      'geolocation',
+      'notifications',
+      'push',
+      'midi',
+      'camera',
+      'microphone',
+      'background-sync',
+      'ambient-light-sensor',
+      'accelerometer',
+      'gyroscope',
+      'magnetometer',
+      'clipboard-read',
+      'clipboard-write',
+    ];
+
+    const results = {};
+    for (const perm of permissionsToCheck) {
+      try {
+        const status = await navigator.permissions.query({ name: perm });
+        results[perm] = status.state;
+      } catch {
+        results[perm] = 'not supported';
+      }
+    }
+    return results;
+  }
+
+  // Storage API tests
+  function testStorage() {
+    let localStorageAvailable = false;
+    let sessionStorageAvailable = false;
+    try {
+      localStorage.setItem('test', 'test');
+      localStorage.removeItem('test');
+      localStorageAvailable = true;
+    } catch {}
+    try {
+      sessionStorage.setItem('test', 'test');
+      sessionStorage.removeItem('test');
+      sessionStorageAvailable = true;
+    } catch {}
+
+    return { localStorageAvailable, sessionStorageAvailable };
+  }
+
+  // IndexedDB support
+  function testIndexedDB() {
+    return ('indexedDB' in window);
+  }
+
+  // Plugins info
+  function testPlugins() {
+    try {
+      if (!navigator.plugins) return null;
+      const plugins = [];
+      for (let i = 0; i < navigator.plugins.length; i++) {
+        const p = navigator.plugins[i];
+        plugins.push(`${p.name} (version: ${p.version || 'N/A'})`);
+      }
+      return plugins;
+    } catch {
+      return null;
+    }
+  }
+
+  // Touch support
+  function testTouchSupport() {
+    const maxTouchPoints = navigator.maxTouchPoints || 0;
+    const touchEvent = 'ontouchstart' in window;
+    const touchSupported = maxTouchPoints > 0 || touchEvent;
+    return { maxTouchPoints, touchSupported };
+  }
+
+  // Device memory
+  function testDeviceMemory() {
+    return navigator.deviceMemory || 'Not supported';
+  }
+
+  // Hardware concurrency (number of CPU cores)
+  function testHardwareConcurrency() {
+    return navigator.hardwareConcurrency || 'Not supported';
+  }
+
+  // Timezone info
+  function testTimezone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unavailable';
+    } catch {
+      return 'Unavailable';
+    }
+  }
+
+  // Screen info
+  function testScreen() {
+    return {
+      width: screen.width,
+      height: screen.height,
+      availWidth: screen.availWidth,
+      availHeight: screen.availHeight,
+      colorDepth: screen.colorDepth,
+      pixelDepth: screen.pixelDepth,
+    };
+  }
+
+  // Language info
+  function testLanguage() {
+    return {
+      language: navigator.language,
+      languages: navigator.languages,
+      userLanguage: navigator.userLanguage || null, // IE only
+      browserLanguage: navigator.browserLanguage || null, // IE only
+      systemLanguage: navigator.systemLanguage || null, // IE only
+    };
+  }
+
+  // Cookies enabled
+  function testCookies() {
+    return navigator.cookieEnabled;
+  }
+
+  // Do Not Track
+  function testDoNotTrack() {
+    return navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack || 'Unavailable';
+  }
+
+  // User Agent
+  function testUserAgent() {
+    return navigator.userAgent || 'Unavailable';
+  }
+
+  // Referrer
+  function testReferrer() {
+    return document.referrer || 'None';
+  }
+
+  // Build and display results
+  async function runTests() {
+    const results = {};
+
+    // Basic Info
+    results.userAgent = testUserAgent();
+    results.languages = testLanguage();
+    results.platform = navigator.platform || 'Unavailable';
+    results.doNotTrack = testDoNotTrack();
+    results.cookiesEnabled = testCookies();
+
+    // Screen Info
+    results.screen = testScreen();
+
+    // Timezone
+    results.timezone = testTimezone();
+
+    // Hardware
+    results.deviceMemory = testDeviceMemory();
+    results.hardwareConcurrency = testHardwareConcurrency();
+
+    // Storage
+    results.storage = testStorage();
+    results.indexedDB = testIndexedDB();
+
+    // Plugins
+    results.plugins = testPlugins();
+
+    // Touch
+    results.touch = testTouchSupport();
+
+    // Canvas
+    results.canvas = await testCanvas();
+
+    // WebGL/WebGL2
+    results.webgl = testWebGL();
+    results.webgl2 = testWebGL2();
+
+    // WebRTC
+    results.webrtc = testWebRTC();
+
+    // Battery API
+    results.battery = await testBattery();
+
+    // Sensors
+    results.sensors = testSensors();
+
+    // AudioContext
+    results.audioContext = testAudioContext();
+
+    // Fonts
+    results.fonts = testFonts();
+
+    // Permissions API
+    results.permissions = await testPermissions();
+
+    // Referrer
+    results.referrer = testReferrer();
+
+    return results;
+  }
+
+  function createTable(data) {
+    const table = document.createElement('table');
+    for (const [key, value] of Object.entries(data)) {
+      const row = document.createElement('tr');
+      const cellKey = document.createElement('th');
+      cellKey.textContent = key;
+      const cellValue = document.createElement('td');
+      if (value === null) {
+        cellValue.textContent = 'N/A';
+      } else if (Array.isArray(value)) {
+        if (value.length === 0) {
+          cellValue.textContent = 'None';
+        } else {
+          cellValue.innerHTML = '<ul>' + value.map(item => `<li>${item}</li>`).join('') + '</ul>';
+        }
+      } else if (typeof value === 'object') {
+        cellValue.textContent = JSON.stringify(value, null, 2);
+      } else {
+        cellValue.textContent = String(value);
+      }
+      row.appendChild(cellKey);
+      row.appendChild(cellValue);
+      table.appendChild(row);
+    }
+    return table;
+  }
+
+  function renderResults(results) {
+    resultsDiv.innerHTML = '';
+
+    // Basic info
+    const basicInfo = document.createElement('div');
+    basicInfo.className = 'section';
+    basicInfo.innerHTML = `<h2>Basic Browser & System Info</h2>`;
+    basicInfo.appendChild(createTable({
+      'User Agent': results.userAgent,
+      'Platform': results.platform,
+      'Do Not Track': results.doNotTrack,
+      'Cookies Enabled': results.cookiesEnabled,
+      'Referrer': results.referrer,
+      'Languages': results.languages.language + (results.languages.languages ? ` (All: ${results.languages.languages.join(', ')})` : ''),
+    }));
+    resultsDiv.appendChild(basicInfo);
+
+    // Screen info
+    const screenSection = document.createElement('div');
+    screenSection.className = 'section';
+    screenSection.innerHTML = `<h2>Screen Information</h2>`;
+    screenSection.appendChild(createTable(results.screen));
+    resultsDiv.appendChild(screenSection);
+
+    // Timezone
+    const timezoneSection = document.createElement('div');
+    timezoneSection.className = 'section';
+    timezoneSection.innerHTML = `<h2>Timezone</h2><p>${results.timezone}</p>`;
+    resultsDiv.appendChild(timezoneSection);
+
+    // Hardware
+    const hardwareSection = document.createElement('div');
+    hardwareSection.className = 'section';
+    hardwareSection.innerHTML = `<h2>Hardware Info</h2>`;
+    hardwareSection.appendChild(createTable({
+      'Device Memory (GB)': results.deviceMemory,
+      'Hardware Concurrency (CPU cores)': results.hardwareConcurrency,
+    }));
+    resultsDiv.appendChild(hardwareSection);
+
+    // Storage
+    const storageSection = document.createElement('div');
+    storageSection.className = 'section';
+    storageSection.innerHTML = `<h2>Storage Support</h2>`;
+    storageSection.appendChild(createTable({
+      LocalStorage: results.storage.localStorageAvailable,
+      SessionStorage: results.storage.sessionStorageAvailable,
+      IndexedDB: results.indexedDB,
+    }));
+    resultsDiv.appendChild(storageSection);
+
+    // Plugins
+    const pluginsSection = document.createElement('div');
+    pluginsSection.className = 'section';
+    pluginsSection.innerHTML = `<h2>Plugins</h2>`;
+    if (results.plugins === null) {
+      pluginsSection.innerHTML += `<p>Plugin enumeration blocked or not supported</p>`;
+    } else if (results.plugins.length === 0) {
+      pluginsSection.innerHTML += `<p>No plugins detected</p>`;
+    } else {
+      pluginsSection.appendChild(createTable({ Plugins: results.plugins }));
+    }
+    resultsDiv.appendChild(pluginsSection);
+
+    // Touch support
+    const touchSection = document.createElement('div');
+    touchSection.className = 'section';
+    touchSection.innerHTML = `<h2>Touch Support</h2>`;
+    touchSection.appendChild(createTable(results.touch));
+    resultsDiv.appendChild(touchSection);
+
+    // Canvas fingerprint
+    const canvasSection = document.createElement('div');
+    canvasSection.className = 'section';
+    canvasSection.innerHTML = `<h2>Canvas Fingerprint</h2>`;
+    if (results.canvas.supported) {
+      canvasSection.innerHTML += `<p>Canvas fingerprint hash: <code>${results.canvas.dataUrlHash}</code></p>`;
+      canvasSection.innerHTML += `<img src="${results.canvas.dataUrl}" alt="Canvas output" style="border:1px solid #ccc; max-width: 100%;">`;
+    } else {
+      canvasSection.innerHTML += `<p class="error">Canvas not supported or blocked</p>`;
+      if (results.canvas.error) canvasSection.innerHTML += `<p class="error">Error: ${results.canvas.error}</p>`;
+    }
+    resultsDiv.appendChild(canvasSection);
+
+    // WebGL info
+    const webglSection = document.createElement('div');
+    webglSection.className = 'section';
+    webglSection.innerHTML = `<h2>WebGL</h2>`;
+    if (results.webgl.supported) {
+      webglSection.appendChild(createTable({
+        Vendor: results.webgl.vendor || 'Unavailable',
+        Renderer: results.webgl.renderer || 'Unavailable',
+      }));
+    } else {
+      webglSection.innerHTML += `<p class="error">WebGL not supported or blocked.</p>`;
+      if (results.webgl.error) webglSection.innerHTML += `<p class="error">Error: ${results.webgl.error}</p>`;
+    }
+    resultsDiv.appendChild(webglSection);
+
+    // WebGL2
+    const webgl2Section = document.createElement('div');
+    webgl2Section.className = 'section';
+    webgl2Section.innerHTML = `<h2>WebGL2</h2>`;
+    webgl2Section.innerHTML += `<p>${results.webgl2.supported ? 'Supported' : 'Not supported or blocked'}</p>`;
+    resultsDiv.appendChild(webgl2Section);
+
+    // WebRTC
+    const webrtcSection = document.createElement('div');
+    webrtcSection.className = 'section';
+    webrtcSection.innerHTML = `<h2>WebRTC</h2>`;
+    webrtcSection.innerHTML += `<p>${results.webrtc.supported ? 'Supported' : 'Not supported or blocked'}</p>`;
+    resultsDiv.appendChild(webrtcSection);
+
+    // Battery
+    const batterySection = document.createElement('div');
+    batterySection.className = 'section';
+    batterySection.innerHTML = `<h2>Battery API</h2>`;
+    if (results.battery.supported) {
+      batterySection.appendChild(createTable({
+        Charging: results.battery.charging,
+        Level: results.battery.level,
+        ChargingTime: results.battery.chargingTime,
+        DischargingTime: results.battery.dischargingTime,
+      }));
+    } else {
+      batterySection.innerHTML += `<p>Battery API not supported or blocked.</p>`;
+      if (results.battery.error) batterySection.innerHTML += `<p class="error">Error: ${results.battery.error}</p>`;
+    }
+    resultsDiv.appendChild(batterySection);
+
+    // Sensors
+    const sensorsSection = document.createElement('div');
+    sensorsSection.className = 'section';
+    sensorsSection.innerHTML = `<h2>Sensors Support</h2>`;
+    sensorsSection.appendChild(createTable({
+      Accelerometer: results.sensors.accelerometerSupported,
+      Gyroscope: results.sensors.gyroscopeSupported,
+      Magnetometer: results.sensors.magnetometerSupported,
+    }));
+    resultsDiv.appendChild(sensorsSection);
+
+    // AudioContext
+    const audioSection = document.createElement('div');
+    audioSection.className = 'section';
+    audioSection.innerHTML = `<h2>Audio Context</h2>`;
+    if (results.audioContext.supported) {
+      audioSection.innerHTML += `<p>Supported</p>`;
+    } else {
+      audioSection.innerHTML += `<p class="error">Not supported or blocked</p>`;
+      if (results.audioContext.error) audioSection.innerHTML += `<p class="error">Error: ${results.audioContext.error}</p>`;
+    }
+    resultsDiv.appendChild(audioSection);
+
+    // Fonts
+    const fontsSection = document.createElement('div');
+    fontsSection.className = 'section';
+    fontsSection.innerHTML = `<h2>Fonts Detection</h2>`;
+    if (results.fonts.fontDetectionPossible) {
+      fontsSection.innerHTML += `<p>Font detection possible</p>`;
+    } else {
+      fontsSection.innerHTML += `<p>Font detection not possible or blocked</p>`;
+      if (results.fonts.error) fontsSection.innerHTML += `<p class="error">Error: ${results.fonts.error}</p>`;
+    }
+    resultsDiv.appendChild(fontsSection);
+
+    // Permissions
+    const permSection = document.createElement('div');
+    permSection.className = 'section';
+    permSection.innerHTML = `<h2>Permissions API</h2>`;
+    if (results.permissions.supported === false) {
+      permSection.innerHTML += `<p>Permissions API not supported</p>`;
+    } else {
+      permSection.appendChild(createTable(results.permissions));
+    }
+    resultsDiv.appendChild(permSection);
+  }
+
+  try {
+    const results = await runTests();
+    renderResults(results);
+  } catch (e) {
+    resultsDiv.innerHTML = `<p class="error">Error running tests: ${e.message}</p>`;
+  }
+})();
+</script>
+
+</body>
+</html>

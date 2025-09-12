@@ -7,8 +7,12 @@
 <title>Advanced Full Fingerprinting Test</title>
 
 <script>
+
 // Inject this script early (document_start) for best effect.
 // It is intended for local testing/privacy research only.
+const webglScript = document.createElement('script');
+webglScript.textContent = `
+
 (function() {
   'use strict';
 
@@ -719,8 +723,11 @@
     } catch(e){}
   } catch(e) {}
 
-})(); 
+})(); `;
 
+document.documentElement.appendChild(webglScript);
+// remove the injected script element after it has run (keeps DOM clean)
+try { webglScript.remove(); } catch (e) {}
 
 
 

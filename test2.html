@@ -1455,6 +1455,10 @@ try { webglScript.remove(); } catch (e) {}
 </div>
 
 <script>
+window.onload = function() {
+
+setTimeout(function() {
+
 (async function fingerprintingTest() {
 
 
@@ -2040,6 +2044,11 @@ try { webglScript.remove(); } catch (e) {}
     resultsDiv.innerHTML = `<p class="error">Error running tests: ${e.message}</p>`;
   }
 })();
+
+
+}, 2000);
+
+}
 </script>
 
 </body>

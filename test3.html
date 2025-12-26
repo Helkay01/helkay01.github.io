@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Main vs Isolated Environment Fingerprint Test</title>
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        background: #0f1115;
+        color: #eaeaea;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .panel {
+        background: #161a22;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 0 0 1px #2a2f3a;
+    }
+
+    .panel h2 {
+        margin-top: 0;
+        font-size: 18px;
+        border-bottom: 1px solid #2a2f3a;
+        padding-bottom: 8px;
+    }
+
+    .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px dashed #2a2f3a;
+        font-size: 14px;
+    }
+
+    .row:last-child {
+        border-bottom: none;
+    }
+
+    .label {
+        color: #9aa4b2;
+        padding-right: 10px;
+    }
+
+    .value {
+        text-align: right;
+        max-width: 65%;
+        word-break: break-all;
+    }
+
+    .mismatch {
+        color: #ff5f5f;
+        font-weight: bold;
+    }
+
+    .match {
+        color: #6bff95;
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 25px;
+        font-size: 12px;
+        color: #777;
+    }
+</style>
+</head>
+<body>
+
+<h1>Main vs Isolated Environment Fingerprint Detection</h1>
+
+<div class="grid">
+    <div class="panel" id="mainPanel">
+        <h2>Main Environment (window)</h2>
+        <div id="mainData"></div>
+    </div>
+
+    <div class="panel" id="workerPanel">
+        <h2>Isolated Environment (Web Worker)</h2>
+        <div id="workerData"></div>
+    </div>
+</div>
+
+<footer>
+    Red values indicate mismatches → likely JS-only spoofing
+</footer>
+
+<script>
+/* ------------------ Main Environment ------------------ */
+
+function getWebGLInfo(canvas) {
+    const gl =
+        canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl");
+
+    if (!gl) {
+        return { vendor: "unavailable", renderer: "unavailable" };
+    }
+
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    if (!dbg) {
+        return { vendor: "masked", renderer: "masked" };
+    }
+
+    return {
+        vendor: gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL),
+        renderer: gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+    };
+}
+
+const mainCanvas = document.createElement("canvas");
+const mainGL = getWebGLInfo(mainCanvas);
+
+const mainFP = {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    deviceMemory: navigator.deviceMemory ?? "undefined",
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    maxTouchPoints: navigator.maxTouchPoints,
+    webglVendor: mainGL.vendor,
+    webglRenderer: mainGL.renderer
+};
+
+/* ------------------ Worker Environment ------------------ */
+
+const workerCode = `
+self.onmessage = () => {
+    let webglVendor = "unavailable";
+    let webglRenderer = "unavailable";
+
+    try {
+        const canvas = new OffscreenCanvas(64, 64);
+        const gl = canvas.getContext("webgl");
+
+        if (gl) {
+            const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+            if (dbg) {
+                webglVendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
+                webglRenderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+            } else {
+                webglVendor = "masked";
+                webglRenderer = "masked";
+            }
+        }
+    } catch (e) {}
+
+    self.postMessage({
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        deviceMemory: navigator.deviceMemory ?? "undefined",
+        hardwareConcurrency: navigator.hardwareConcurrency,
+        maxTouchPoints: navigator.maxTouchPoints,
+        webglVendor,
+        webglRenderer
+    });
+};
+`;
+
+const workerBlob = new Blob([workerCode], { type: "application/javascript" });
+const worker = new Worker(URL.createObjectURL(workerBlob));
+
+worker.onmessage = e => {
+    render(mainFP, e.data);
+};
+
+worker.postMessage({});
+
+/* ------------------ Rendering ------------------ */
+
+function render(main, worker) {
+    const keys = Object.keys(main);
+    const mainDiv = document.getElementById("mainData");
+    const workerDiv = document.getElementById("workerData");
+
+    keys.forEach(k => {
+        const same = String(main[k]) === String(worker[k]);
+
+        mainDiv.appendChild(row(k, main[k], same));
+        workerDiv.appendChild(row(k, worker[k], same));
+    });
+}
+
+function row(label, value, same) {
+    const div = document.createElement("div");
+    div.className = "row";
+
+    const l = document.createElement("div");
+    l.className = "label";
+    l.textContent = label;
+
+    const v = document.createElement("div");
+    v.className = "value " + (same ? "match" : "mismatch");
+    v.textContent = value;
+
+    div.appendChild(l);
+    div.appendChild(v);
+    return div;
+}
+</script>
+
+</body>
+</html>

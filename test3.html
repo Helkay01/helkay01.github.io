@@ -2,212 +2,273 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Main vs Isolated Environment Fingerprint Test</title>
+<title>Advanced Fingerprint & Spoof Detection</title>
+
 <style>
-    body {
-        font-family: system-ui, sans-serif;
-        background: #0f1115;
-        color: #eaeaea;
-        margin: 0;
-        padding: 20px;
-    }
-
-    h1 {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
-
-    .panel {
-        background: #161a22;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 0 0 1px #2a2f3a;
-    }
-
-    .panel h2 {
-        margin-top: 0;
-        font-size: 18px;
-        border-bottom: 1px solid #2a2f3a;
-        padding-bottom: 8px;
-    }
-
-    .row {
-        display: flex;
-        justify-content: space-between;
-        padding: 6px 0;
-        border-bottom: 1px dashed #2a2f3a;
-        font-size: 14px;
-    }
-
-    .row:last-child {
-        border-bottom: none;
-    }
-
-    .label {
-        color: #9aa4b2;
-        padding-right: 10px;
-    }
-
-    .value {
-        text-align: right;
-        max-width: 65%;
-        word-break: break-all;
-    }
-
-    .mismatch {
-        color: #ff5f5f;
-        font-weight: bold;
-    }
-
-    .match {
-        color: #6bff95;
-    }
-
-    footer {
-        text-align: center;
-        margin-top: 25px;
-        font-size: 12px;
-        color: #777;
-    }
+body {
+    background:#0b0d12;
+    color:#e6e6e6;
+    font-family:system-ui, sans-serif;
+    margin:0;
+    padding:20px;
+}
+h1 { text-align:center; }
+.section {
+    margin-top:25px;
+    padding:15px;
+    border-radius:10px;
+    background:#141826;
+    box-shadow:0 0 0 1px #2a3042;
+}
+.section h2 {
+    margin-top:0;
+    border-bottom:1px solid #2a3042;
+    padding-bottom:6px;
+}
+.grid {
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:15px;
+}
+.card {
+    background:#0f1320;
+    border-radius:8px;
+    padding:10px;
+    font-size:13px;
+}
+.row {
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px dashed #2a3042;
+    padding:4px 0;
+}
+.row:last-child { border-bottom:none; }
+.bad { color:#ff5f5f; font-weight:bold; }
+.good { color:#6bff95; }
+.warn { color:#ffd966; }
+small { color:#999; }
 </style>
 </head>
+
 <body>
+<h1>Advanced Fingerprint & Spoof Detection</h1>
+<small>Red = mismatch → likely JS-only spoofing</small>
 
-<h1>Main vs Isolated Environment Fingerprint Detection</h1>
-
-<div class="grid">
-    <div class="panel" id="mainPanel">
-        <h2>Main Environment (window)</h2>
-        <div id="mainData"></div>
-    </div>
-
-    <div class="panel" id="workerPanel">
-        <h2>Isolated Environment (Web Worker)</h2>
-        <div id="workerData"></div>
-    </div>
+<div class="section">
+<h2>Fingerprint Comparison</h2>
+<div class="grid" id="grid"></div>
 </div>
 
-<footer>
-    Red values indicate mismatches → likely JS-only spoofing
-</footer>
-
 <script>
-/* ------------------ Main Environment ------------------ */
+/* ------------------ UTILITIES ------------------ */
 
-function getWebGLInfo(canvas) {
-    const gl =
-        canvas.getContext("webgl") ||
-        canvas.getContext("experimental-webgl");
+async function hash(str) {
+    const buf = new TextEncoder().encode(str);
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
 
-    if (!gl) {
-        return { vendor: "unavailable", renderer: "unavailable" };
-    }
+function getCanvasFP() {
+    const c = document.createElement("canvas");
+    c.width = 300; c.height = 80;
+    const x = c.getContext("2d");
+    x.textBaseline="top";
+    x.font="16px Arial";
+    x.fillStyle="#f60";
+    x.fillRect(0,0,300,80);
+    x.fillStyle="#069";
+    x.fillText("Fingerprint Test 🧬", 10, 10);
+    return c.toDataURL();
+}
 
+function getWebGLFP(canvas) {
+    const gl = canvas.getContext("webgl");
+    if (!gl) return {vendor:"none", renderer:"none", params:"none"};
     const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-    if (!dbg) {
-        return { vendor: "masked", renderer: "masked" };
+    const vendor = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : "masked";
+    const renderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "masked";
+
+    const params = [
+        gl.getParameter(gl.MAX_TEXTURE_SIZE),
+        gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+        gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
+    ].join(",");
+
+    return {vendor, renderer, params};
+}
+
+async function getAudioFP() {
+    try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0);
+        const fp = gain.gain.value.toString();
+        osc.stop();
+        ctx.close();
+        return fp;
+    } catch {
+        return "blocked";
     }
+}
+
+/* ------------------ MAIN ENV ------------------ */
+
+async function collectMain() {
+    const canvas = document.createElement("canvas");
+    const gl = getWebGLFP(canvas);
 
     return {
-        vendor: gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL),
-        renderer: gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        env: "Main",
+        ua: navigator.userAgent,
+        uach: navigator.userAgentData?.platform || "n/a",
+        platform: navigator.platform,
+        lang: navigator.languages?.join(","),
+        mem: navigator.deviceMemory ?? "undef",
+        cores: navigator.hardwareConcurrency,
+        touch: navigator.maxTouchPoints,
+        webdriver: navigator.webdriver,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        canvas: await hash(getCanvasFP()),
+        webgl: await hash(gl.vendor + gl.renderer + gl.params),
+        audio: await hash(await getAudioFP())
     };
 }
 
-const mainCanvas = document.createElement("canvas");
-const mainGL = getWebGLInfo(mainCanvas);
-
-const mainFP = {
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    deviceMemory: navigator.deviceMemory ?? "undefined",
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    maxTouchPoints: navigator.maxTouchPoints,
-    webglVendor: mainGL.vendor,
-    webglRenderer: mainGL.renderer
-};
-
-/* ------------------ Worker Environment ------------------ */
+/* ------------------ WORKER ENV ------------------ */
 
 const workerCode = `
-self.onmessage = () => {
-    let webglVendor = "unavailable";
-    let webglRenderer = "unavailable";
+self.onmessage = async () => {
+    function hash(str) {
+        const buf = new TextEncoder().encode(str);
+        return crypto.subtle.digest("SHA-256", buf)
+        .then(d => [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""));
+    }
 
+    let webgl = "none";
     try {
-        const canvas = new OffscreenCanvas(64, 64);
-        const gl = canvas.getContext("webgl");
-
+        const c = new OffscreenCanvas(64,64);
+        const gl = c.getContext("webgl");
         if (gl) {
             const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-            if (dbg) {
-                webglVendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
-                webglRenderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
-            } else {
-                webglVendor = "masked";
-                webglRenderer = "masked";
-            }
+            webgl = dbg ?
+              gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) +
+              gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) :
+              "masked";
         }
-    } catch (e) {}
+    } catch {}
 
     self.postMessage({
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        deviceMemory: navigator.deviceMemory ?? "undefined",
-        hardwareConcurrency: navigator.hardwareConcurrency,
-        maxTouchPoints: navigator.maxTouchPoints,
-        webglVendor,
-        webglRenderer
+        env:"Worker",
+        ua:navigator.userAgent,
+        uach:navigator.userAgentData?.platform || "n/a",
+        platform:navigator.platform,
+        lang:navigator.languages?.join(","),
+        mem:navigator.deviceMemory ?? "undef",
+        cores:navigator.hardwareConcurrency,
+        touch:navigator.maxTouchPoints,
+        webdriver:navigator.webdriver,
+        tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+        canvas:"no-dom",
+        webgl: await hash(webgl),
+        audio:"no-audio"
     });
 };
 `;
 
-const workerBlob = new Blob([workerCode], { type: "application/javascript" });
-const worker = new Worker(URL.createObjectURL(workerBlob));
-
-worker.onmessage = e => {
-    render(mainFP, e.data);
-};
-
+const worker = new Worker(URL.createObjectURL(new Blob([workerCode])));
+const workerData = new Promise(r => worker.onmessage = e => r(e.data));
 worker.postMessage({});
 
-/* ------------------ Rendering ------------------ */
+/* ------------------ SERVICE WORKER ------------------ */
 
-function render(main, worker) {
-    const keys = Object.keys(main);
-    const mainDiv = document.getElementById("mainData");
-    const workerDiv = document.getElementById("workerData");
+async function collectSW() {
+    if (!("serviceWorker" in navigator)) return null;
 
-    keys.forEach(k => {
-        const same = String(main[k]) === String(worker[k]);
+    const swCode = `
+self.addEventListener("message", async e => {
+    function hash(str) {
+        const buf = new TextEncoder().encode(str);
+        return crypto.subtle.digest("SHA-256", buf)
+        .then(d => [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""));
+    }
 
-        mainDiv.appendChild(row(k, main[k], same));
-        workerDiv.appendChild(row(k, worker[k], same));
+    let webgl="none";
+    try {
+        const c=new OffscreenCanvas(64,64);
+        const gl=c.getContext("webgl");
+        if(gl){
+            const dbg=gl.getExtension("WEBGL_debug_renderer_info");
+            webgl=dbg?gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL):"masked";
+        }
+    }catch{}
+
+    e.source.postMessage({
+        env:"ServiceWorker",
+        ua:navigator.userAgent,
+        uach:navigator.userAgentData?.platform || "n/a",
+        platform:navigator.platform,
+        lang:navigator.languages?.join(","),
+        mem:navigator.deviceMemory ?? "undef",
+        cores:navigator.hardwareConcurrency,
+        touch:navigator.maxTouchPoints,
+        webdriver:navigator.webdriver,
+        tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+        canvas:"no-dom",
+        webgl: await hash(webgl),
+        audio:"no-audio"
+    });
+});
+`;
+
+    const blob = new Blob([swCode], {type:"text/javascript"});
+    const url = URL.createObjectURL(blob);
+    const reg = await navigator.serviceWorker.register(url);
+    await navigator.serviceWorker.ready;
+
+    return new Promise(r => {
+        navigator.serviceWorker.onmessage = e => r(e.data);
+        navigator.serviceWorker.controller?.postMessage({});
     });
 }
 
-function row(label, value, same) {
-    const div = document.createElement("div");
-    div.className = "row";
+/* ------------------ RENDER ------------------ */
 
-    const l = document.createElement("div");
-    l.className = "label";
-    l.textContent = label;
+function render(all) {
+    const grid = document.getElementById("grid");
+    const keys = Object.keys(all[0]).filter(k=>k!=="env");
 
-    const v = document.createElement("div");
-    v.className = "value " + (same ? "match" : "mismatch");
-    v.textContent = value;
-
-    div.appendChild(l);
-    div.appendChild(v);
-    return div;
+    all.forEach(env => {
+        const c = document.createElement("div");
+        c.className="card";
+        c.innerHTML=`<b>${env.env}</b>`;
+        keys.forEach(k=>{
+            const base = all[0][k];
+            const same = String(env[k]) === String(base);
+            c.innerHTML += `
+                <div class="row">
+                    <span>${k}</span>
+                    <span class="${same?"good":"bad"}">${env[k]}</span>
+                </div>`;
+        });
+        grid.appendChild(c);
+    });
 }
+
+/* ------------------ RUN ------------------ */
+
+(async ()=>{
+    const main = await collectMain();
+    const workerEnv = await workerData;
+    const sw = await collectSW();
+
+    const all = [main, workerEnv];
+    if (sw) all.push(sw);
+
+    render(all);
+})();
 </script>
 
 </body>

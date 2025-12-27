@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Advanced Fingerprint & Spoof Detection</title>
+<title>Advanced Spoof Detection</title>
 
 <style>
 body {
@@ -13,28 +13,23 @@ body {
     padding:20px;
 }
 h1 { text-align:center; }
-.section {
-    margin-top:25px;
-    padding:15px;
-    border-radius:10px;
-    background:#141826;
-    box-shadow:0 0 0 1px #2a3042;
-}
-.section h2 {
-    margin-top:0;
-    border-bottom:1px solid #2a3042;
-    padding-bottom:6px;
-}
 .grid {
     display:grid;
     grid-template-columns: repeat(3, 1fr);
     gap:15px;
+    margin-top:20px;
 }
 .card {
-    background:#0f1320;
-    border-radius:8px;
-    padding:10px;
+    background:#141826;
+    border-radius:10px;
+    padding:12px;
     font-size:13px;
+    box-shadow:0 0 0 1px #2a3042;
+}
+.card h2 {
+    margin:0 0 8px 0;
+    border-bottom:1px solid #2a3042;
+    padding-bottom:6px;
 }
 .row {
     display:flex;
@@ -43,233 +38,117 @@ h1 { text-align:center; }
     padding:4px 0;
 }
 .row:last-child { border-bottom:none; }
-.bad { color:#ff5f5f; font-weight:bold; }
 .good { color:#6bff95; }
-.warn { color:#ffd966; }
+.bad { color:#ff5f5f; font-weight:bold; }
 small { color:#999; }
 </style>
 </head>
 
 <body>
-<h1>Advanced Fingerprint & Spoof Detection</h1>
-<small>Red = mismatch → likely JS-only spoofing</small>
+<h1>Advanced Navigator & API Spoof Detection</h1>
+<small>Red = mismatch → JS-only spoofing</small>
 
-<div class="section">
-<h2>Fingerprint Comparison</h2>
 <div class="grid" id="grid"></div>
-</div>
 
 <script>
-/* ------------------ UTILITIES ------------------ */
-
-async function hash(str) {
+/* ---------- helpers ---------- */
+async function sha256(str) {
     const buf = new TextEncoder().encode(str);
-    const digest = await crypto.subtle.digest("SHA-256", buf);
-    return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+    const d = await crypto.subtle.digest("SHA-256", buf);
+    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-function getCanvasFP() {
+function canvasFP() {
     const c = document.createElement("canvas");
     c.width = 300; c.height = 80;
     const x = c.getContext("2d");
-    x.textBaseline="top";
     x.font="16px Arial";
     x.fillStyle="#f60";
     x.fillRect(0,0,300,80);
     x.fillStyle="#069";
-    x.fillText("Fingerprint Test 🧬", 10, 10);
+    x.fillText("Canvas FP 🧬", 10, 10);
     return c.toDataURL();
 }
 
-function getWebGLFP(canvas) {
-    const gl = canvas.getContext("webgl");
-    if (!gl) return {vendor:"none", renderer:"none", params:"none"};
+function webglFP() {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl");
+    if (!gl) return "none";
     const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-    const vendor = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : "masked";
-    const renderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "masked";
-
-    const params = [
-        gl.getParameter(gl.MAX_TEXTURE_SIZE),
-        gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
-        gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
-    ].join(",");
-
-    return {vendor, renderer, params};
+    return dbg
+        ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) +
+          gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        : "masked";
 }
 
-async function getAudioFP() {
-    try {
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(0);
-        const fp = gain.gain.value.toString();
-        osc.stop();
-        ctx.close();
-        return fp;
-    } catch {
-        return "blocked";
-    }
-}
-
-/* ------------------ MAIN ENV ------------------ */
-
+/* ---------- MAIN ---------- */
 async function collectMain() {
-    const canvas = document.createElement("canvas");
-    const gl = getWebGLFP(canvas);
-
     return {
         env: "Main",
         ua: navigator.userAgent,
-        uach: navigator.userAgentData?.platform || "n/a",
         platform: navigator.platform,
-        lang: navigator.languages?.join(","),
+        languages: navigator.languages?.join(","),
         mem: navigator.deviceMemory ?? "undef",
         cores: navigator.hardwareConcurrency,
         touch: navigator.maxTouchPoints,
         webdriver: navigator.webdriver,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        canvas: await hash(getCanvasFP()),
-        webgl: await hash(gl.vendor + gl.renderer + gl.params),
-        audio: await hash(await getAudioFP())
+        canvas: await sha256(canvasFP()),
+        webgl: await sha256(webglFP())
     };
 }
 
-/* ------------------ WORKER ENV ------------------ */
-
-const workerCode = `
-self.onmessage = async () => {
-    function hash(str) {
-        const buf = new TextEncoder().encode(str);
-        return crypto.subtle.digest("SHA-256", buf)
-        .then(d => [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""));
-    }
-
-    let webgl = "none";
-    try {
-        const c = new OffscreenCanvas(64,64);
-        const gl = c.getContext("webgl");
-        if (gl) {
-            const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-            webgl = dbg ?
-              gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) +
-              gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) :
-              "masked";
-        }
-    } catch {}
-
-    self.postMessage({
-        env:"Worker",
-        ua:navigator.userAgent,
-        uach:navigator.userAgentData?.platform || "n/a",
-        platform:navigator.platform,
-        lang:navigator.languages?.join(","),
-        mem:navigator.deviceMemory ?? "undef",
-        cores:navigator.hardwareConcurrency,
-        touch:navigator.maxTouchPoints,
-        webdriver:navigator.webdriver,
-        tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
-        canvas:"no-dom",
-        webgl: await hash(webgl),
-        audio:"no-audio"
-    });
-};
-`;
-
-const worker = new Worker(URL.createObjectURL(new Blob([workerCode])));
+/* ---------- WORKER ---------- */
+const worker = new Worker("worker.js");
 const workerData = new Promise(r => worker.onmessage = e => r(e.data));
 worker.postMessage({});
 
-/* ------------------ SERVICE WORKER ------------------ */
-
+/* ---------- SERVICE WORKER ---------- */
 async function collectSW() {
     if (!("serviceWorker" in navigator)) return null;
 
-    const swCode = `
-self.addEventListener("message", async e => {
-    function hash(str) {
-        const buf = new TextEncoder().encode(str);
-        return crypto.subtle.digest("SHA-256", buf)
-        .then(d => [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""));
-    }
-
-    let webgl="none";
-    try {
-        const c=new OffscreenCanvas(64,64);
-        const gl=c.getContext("webgl");
-        if(gl){
-            const dbg=gl.getExtension("WEBGL_debug_renderer_info");
-            webgl=dbg?gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL):"masked";
-        }
-    }catch{}
-
-    e.source.postMessage({
-        env:"ServiceWorker",
-        ua:navigator.userAgent,
-        uach:navigator.userAgentData?.platform || "n/a",
-        platform:navigator.platform,
-        lang:navigator.languages?.join(","),
-        mem:navigator.deviceMemory ?? "undef",
-        cores:navigator.hardwareConcurrency,
-        touch:navigator.maxTouchPoints,
-        webdriver:navigator.webdriver,
-        tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
-        canvas:"no-dom",
-        webgl: await hash(webgl),
-        audio:"no-audio"
-    });
-});
-`;
-
-    const blob = new Blob([swCode], {type:"text/javascript"});
-    const url = URL.createObjectURL(blob);
-    const reg = await navigator.serviceWorker.register(url);
+    await navigator.serviceWorker.register("sw.js", { scope: "./" });
     await navigator.serviceWorker.ready;
 
     return new Promise(r => {
-        navigator.serviceWorker.onmessage = e => r(e.data);
+        navigator.serviceWorker.addEventListener("message", e => r(e.data), { once:true });
         navigator.serviceWorker.controller?.postMessage({});
     });
 }
 
-/* ------------------ RENDER ------------------ */
-
-function render(all) {
+/* ---------- RENDER ---------- */
+function render(envs) {
     const grid = document.getElementById("grid");
-    const keys = Object.keys(all[0]).filter(k=>k!=="env");
+    const base = envs[0];
 
-    all.forEach(env => {
-        const c = document.createElement("div");
-        c.className="card";
-        c.innerHTML=`<b>${env.env}</b>`;
-        keys.forEach(k=>{
-            const base = all[0][k];
-            const same = String(env[k]) === String(base);
-            c.innerHTML += `
+    envs.forEach(env => {
+        const card = document.createElement("div");
+        card.className="card";
+        card.innerHTML=`<h2>${env.env}</h2>`;
+
+        Object.keys(base).filter(k=>k!=="env").forEach(k=>{
+            const same = String(env[k]) === String(base[k]);
+            card.innerHTML += `
                 <div class="row">
                     <span>${k}</span>
                     <span class="${same?"good":"bad"}">${env[k]}</span>
                 </div>`;
         });
-        grid.appendChild(c);
+        grid.appendChild(card);
     });
 }
 
-/* ------------------ RUN ------------------ */
-
+/* ---------- RUN ---------- */
 (async ()=>{
     const main = await collectMain();
     const workerEnv = await workerData;
-    const sw = await collectSW();
+    const swEnv = await collectSW();
 
-    const all = [main, workerEnv];
-    if (sw) all.push(sw);
+    const envs = [main, workerEnv];
+    if (swEnv) envs.push(swEnv);
 
-    render(all);
+    render(envs);
 })();
 </script>
-
 </body>
 </html>

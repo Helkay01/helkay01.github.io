@@ -66,7 +66,7 @@ function canvasFP() {
     x.fillStyle="#f60";
     x.fillRect(0,0,300,80);
     x.fillStyle="#069";
-    x.fillText("Canvas FP 🧬", 10, 10);
+    x.fillText("Canvas FP 🧬", 10, 40);
     return c.toDataURL();
 }
 
@@ -81,6 +81,28 @@ function webglFP() {
         : "masked";
 }
 
+async function uaData() {
+    const uad = navigator.userAgentData;
+    if (!uad) return null;
+
+    const hi = await uad.getHighEntropyValues([
+        "architecture",
+        "bitness",
+        "model",
+        "platform",
+        "platformVersion",
+        "uaFullVersion",
+        "fullVersionList",
+        "wow64"
+    ]);
+
+    return {
+        mobile: uad.mobile,
+        brands: uad.brands,
+        ...hi
+    };
+}
+
 /* ---------- MAIN ---------- */
 async function collectMain() {
     return {
@@ -93,6 +115,7 @@ async function collectMain() {
         touch: navigator.maxTouchPoints,
         webdriver: navigator.webdriver,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        uaData: await uaData(),
         canvas: await sha256(canvasFP()),
         webgl: await sha256(webglFP())
     };
@@ -107,7 +130,7 @@ worker.postMessage({});
 async function collectSW() {
     if (!("serviceWorker" in navigator)) return null;
 
-    await navigator.serviceWorker.register("sw.js", { scope: "./" });
+    await navigator.serviceWorker.register("sw.js");
     await navigator.serviceWorker.ready;
 
     return new Promise(r => {
@@ -127,11 +150,15 @@ function render(envs) {
         card.innerHTML=`<h2>${env.env}</h2>`;
 
         Object.keys(base).filter(k=>k!=="env").forEach(k=>{
-            const same = String(env[k]) === String(base[k]);
+            const same = JSON.stringify(env[k]) === JSON.stringify(base[k]);
             card.innerHTML += `
                 <div class="row">
                     <span>${k}</span>
-                    <span class="${same?"good":"bad"}">${env[k]}</span>
+                    <span class="${same?"good":"bad"}">
+                        ${typeof env[k]==="object"
+                            ? `<small>${JSON.stringify(env[k])}</small>`
+                            : env[k]}
+                    </span>
                 </div>`;
         });
         grid.appendChild(card);

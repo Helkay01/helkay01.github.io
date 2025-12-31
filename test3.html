@@ -2,203 +2,116 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Advanced Spoof Detection</title>
-
+<title>Advanced Environment & Spoof Detection</title>
 <style>
-body {
-    background:#0b0d12;
-    color:#e6e6e6;
-    font-family:system-ui, sans-serif;
-    margin:0;
-    padding:20px;
-}
-h1 { text-align:center; }
-.grid {
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:15px;
-    margin-top:20px;
-}
-.card {
-    background:#141826;
-    border-radius:10px;
-    padding:12px;
-    font-size:13px;
-    box-shadow:0 0 0 1px #2a3042;
-}
-.card h2 {
-    margin:0 0 8px 0;
-    border-bottom:1px solid #2a3042;
-    padding-bottom:6px;
-}
-.row {
-    display:flex;
-    justify-content:space-between;
-    border-bottom:1px dashed #2a3042;
-    padding:4px 0;
-}
-.row:last-child { border-bottom:none; }
-.good { color:#6bff95; }
-.bad { color:#ff5f5f; font-weight:bold; }
-small { color:#aaa; line-height:1.4; display:block; }
+    body {
+        background: #0d1117;
+        color: #c9d1d9;
+        font-family: monospace;
+        padding: 20px;
+    }
+    h2 { color: #58a6ff; }
+    pre {
+        background: #161b22;
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
 </style>
 </head>
-
 <body>
-<h1>Advanced Navigator & API Spoof Detection</h1>
-<small>Red = mismatch vs Main environment</small>
 
-<div class="grid" id="grid"></div>
+<h2>Main</h2>
+<pre id="main"></pre>
+
+<h2>Worker</h2>
+<pre id="worker"></pre>
+
+<h2>Service Worker</h2>
+<pre id="sw"></pre>
 
 <script>
-/* ---------- helpers ---------- */
-async function sha256(str) {
-    const buf = new TextEncoder().encode(str);
-    const d = await crypto.subtle.digest("SHA-256", buf);
-    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-
-function canvasFP() {
-    const c = document.createElement("canvas");
-    c.width = 300; c.height = 80;
-    const x = c.getContext("2d");
-    x.font="16px Arial";
-    x.fillStyle="#f60";
-    x.fillRect(0,0,300,80);
-    x.fillStyle="#069";
-    x.fillText("Canvas FP 🧬", 10, 40);
-    return c.toDataURL();
-}
-
-function webglFP() {
-    const c = document.createElement("canvas");
-    const gl = c.getContext("webgl");
-    if (!gl) return "none";
-    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-    return dbg
-        ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) +
-          gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
-        : "masked";
-}
-
-async function collectUAData() {
-    const uad = navigator.userAgentData;
-    if (!uad) return { status: "userAgentData not supported" };
-
-    let hi = {};
+async function getWebGLInfo(canvasProvider) {
     try {
-        hi = await uad.getHighEntropyValues([
-            "architecture",
-            "bitness",
-            "model",
-            "platform",
-            "platformVersion",
-            "uaFullVersion",
-            "fullVersionList",
-            "wow64"
-        ]);
+        const canvas = canvasProvider();
+        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        if (!gl) return { vendor: "unavailable", renderer: "unavailable" };
+
+        const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+        if (!dbg) return { vendor: "masked", renderer: "masked" };
+
+        return {
+            vendor: gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL),
+            renderer: gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        };
     } catch {
-        hi = {};
+        return { vendor: "error", renderer: "error" };
     }
-
-    const norm = v =>
-        v === undefined || v === null || v === "" ? "—" : v;
-
-    return {
-        mobile: norm(uad.mobile),
-        brands: (uad.brands || [])
-            .map(b => `${b.brand} ${b.version}`).join(", ") || "—",
-
-        architecture: norm(hi.architecture),
-        bitness: norm(hi.bitness),
-        model: norm(hi.model),
-        platform: norm(hi.platform),
-        platformVersion: norm(hi.platformVersion),
-        uaFullVersion: norm(hi.uaFullVersion),
-        fullVersionList: Array.isArray(hi.fullVersionList)
-            ? hi.fullVersionList.map(b => `${b.brand} ${b.version}`).join(", ")
-            : "—",
-        wow64: norm(hi.wow64)
-    };
 }
 
-/* ---------- MAIN ---------- */
+async function getUAData() {
+    if (!navigator.userAgentData) return {};
+    return await navigator.userAgentData.getHighEntropyValues([
+        "architecture",
+        "bitness",
+        "model",
+        "platform",
+        "platformVersion",
+        "uaFullVersion",
+        "fullVersionList",
+        "wow64"
+    ]);
+}
+
 async function collectMain() {
+    const webgl = await getWebGLInfo(() => document.createElement("canvas"));
+    const uach = await getUAData();
+
     return {
-        env: "Main",
         ua: navigator.userAgent,
         platform: navigator.platform,
         languages: navigator.languages?.join(","),
         mem: navigator.deviceMemory ?? "undef",
-        cores: navigator.hardwareConcurrency,
-        touch: navigator.maxTouchPoints,
-        webdriver: navigator.webdriver,
+        cores: navigator.hardwareConcurrency ?? "undef",
+        touch: navigator.maxTouchPoints ?? 0,
+        webdriver: navigator.webdriver ?? false,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        uaData: await collectUAData(),
-        canvas: await sha256(canvasFP()),
-        webgl: await sha256(webglFP())
+        webgl_vendor: webgl.vendor,
+        webgl_renderer: webgl.renderer,
+        ua_ch: uach
     };
 }
 
-/* ---------- WORKER ---------- */
-const worker = new Worker("worker.js");
-const workerData = new Promise(r => worker.onmessage = e => r(e.data));
-worker.postMessage({});
+(async () => {
+    const mainData = await collectMain();
+    document.getElementById("main").textContent =
+        JSON.stringify(mainData, null, 2);
 
-/* ---------- SERVICE WORKER ---------- */
-async function collectSW() {
-    if (!("serviceWorker" in navigator)) return null;
+    // Worker
+    const worker = new Worker("worker.js");
+    worker.onmessage = e => {
+        document.getElementById("worker").textContent =
+            JSON.stringify(e.data, null, 2);
+    };
 
-    await navigator.serviceWorker.register("sw.js");
-    await navigator.serviceWorker.ready;
-
-    return new Promise(r => {
-        navigator.serviceWorker.addEventListener("message", e => r(e.data), { once:true });
-        navigator.serviceWorker.controller?.postMessage({});
-    });
-}
-
-/* ---------- RENDER ---------- */
-function render(envs) {
-    const grid = document.getElementById("grid");
-    const base = envs[0];
-
-    envs.forEach(env => {
-        const card = document.createElement("div");
-        card.className="card";
-        card.innerHTML=`<h2>${env.env}</h2>`;
-
-        Object.keys(base).filter(k=>k!=="env").forEach(k=>{
-            const same = JSON.stringify(env[k]) === JSON.stringify(base[k]);
-            card.innerHTML += `
-                <div class="row">
-                    <span>${k}</span>
-                    <span class="${same?"good":"bad"}">
-                        ${typeof env[k]==="object"
-                            ? `<small>${
-                                Object.entries(env[k])
-                                  .map(([a,b]) => `${a}: ${b}`)
-                                  .join("<br>")
-                              }</small>`
-                            : env[k]}
-                    </span>
-                </div>`;
+    // Service Worker
+    if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.register("sw.js");
+        navigator.serviceWorker.addEventListener("message", e => {
+            document.getElementById("sw").textContent =
+                JSON.stringify(e.data, null, 2);
         });
-        grid.appendChild(card);
-    });
-}
 
-/* ---------- RUN ---------- */
-(async ()=>{
-    const main = await collectMain();
-    const workerEnv = await workerData;
-    const swEnv = await collectSW();
-
-    const envs = [main, workerEnv];
-    if (swEnv) envs.push(swEnv);
-
-    render(envs);
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage("collect");
+        } else {
+            navigator.serviceWorker.ready.then(() => {
+                navigator.serviceWorker.controller?.postMessage("collect");
+            });
+        }
+    }
 })();
 </script>
+
 </body>
 </html>

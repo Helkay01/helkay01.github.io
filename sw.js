@@ -1,21 +1,38 @@
+self.addEventListener("install", e => self.skipWaiting());
+self.addEventListener("activate", e => self.clients.claim());
+
+async function sha256(str) {
+    const buf = new TextEncoder().encode(str);
+    const d = await crypto.subtle.digest("SHA-256", buf);
+    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function webglFP() {
+    const c = new OffscreenCanvas(64,64);
+    const gl = c.getContext("webgl");
+    if (!gl) return "none";
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    return dbg
+        ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) +
+          gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        : "masked";
+}
+
+async function uaData() {
+    if (!navigator.userAgentData) return null;
+    const hi = await navigator.userAgentData.getHighEntropyValues([
+        "architecture","bitness","model","platform",
+        "platformVersion","uaFullVersion","fullVersionList","wow64"
+    ]);
+    return {
+        mobile: navigator.userAgentData.mobile,
+        brands: navigator.userAgentData.brands,
+        ...hi
+    };
+}
+
 self.addEventListener("message", async e => {
-    async function sha(str) {
-        const buf = new TextEncoder().encode(str);
-        const d = await crypto.subtle.digest("SHA-256", buf);
-        return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");
-    }
-
-    let webgl = "none";
-    try {
-        const c = new OffscreenCanvas(64,64);
-        const gl = c.getContext("webgl");
-        if (gl) {
-            const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-            webgl = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : "masked";
-        }
-    } catch {}
-
-    e.source.postMessage({
+    const data = {
         env: "ServiceWorker",
         ua: navigator.userAgent,
         platform: navigator.platform,
@@ -25,7 +42,11 @@ self.addEventListener("message", async e => {
         touch: navigator.maxTouchPoints,
         webdriver: navigator.webdriver,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        uaData: await uaData(),
         canvas: "no-dom",
-        webgl: await sha(webgl)
-    });
+        webgl: await sha256(webglFP())
+    };
+
+    const client = await self.clients.get(e.source.id);
+    client?.postMessage(data);
 });

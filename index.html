@@ -1,538 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Start your development with Olalekan Abiodun landing page.">
-    <meta name="author" content="Lekan">
-    <title>Olalekan Abiodun Portfolio</title>
-    <!-- font icons -->
-    <link rel="stylesheet" href="assets/vendors/themify-icons/css/themify-icons.css">
-    <!-- Bootstrap + JohnDoe main styles -->
-	<link rel="stylesheet" href="assets/css/style.css">
+<meta charset="UTF-8">
+<title>Advanced Spoof Detection</title>
+
+<style>
+body {
+    background:#0b0d12;
+    color:#e6e6e6;
+    font-family:system-ui, sans-serif;
+    margin:0;
+    padding:20px;
+}
+h1 { text-align:center; }
+.grid {
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:15px;
+    margin-top:20px;
+}
+.card {
+    background:#141826;
+    border-radius:10px;
+    padding:12px;
+    font-size:13px;
+    box-shadow:0 0 0 1px #2a3042;
+}
+.card h2 {
+    margin:0 0 8px 0;
+    border-bottom:1px solid #2a3042;
+    padding-bottom:6px;
+}
+.row {
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px dashed #2a3042;
+    padding:4px 0;
+}
+.row:last-child { border-bottom:none; }
+.good { color:#6bff95; }
+.bad { color:#ff5f5f; font-weight:bold; }
+small { color:#aaa; line-height:1.4; display:block; }
+</style>
 </head>
 
+<body>
+<h1>Advanced Navigator & API Spoof Detection</h1>
+<small>Red = mismatch vs Main environment</small>
 
-<body data-spy="scroll" data-target=".navbar" data-offset="40" id="home">
-    <a hidden href="components.html" class="btn btn-primary btn-component" data-spy="affix" data-offset-top="600"><i class="ti-shift-left-alt"></i> Components</a>
-    
-    <header class="header">
-        <div class="container">
-            <ul hidden class="social-icons pt-3">
-                <li class="social-item"><a class="social-link text-light" href="#"><i class="ti-facebook" aria-hidden="true"></i></a></li>
-                <li class="social-item"><a class="social-link text-light" href="#"><i class="ti-twitter" aria-hidden="true"></i></a></li>
-                <li class="social-item"><a class="social-link text-light" href="#"><i class="ti-google" aria-hidden="true"></i></a></li>
-                <li class="social-item"><a class="social-link text-light" href="#"><i class="ti-instagram" aria-hidden="true"></i></a></li>
-                <li class="social-item"><a class="social-link text-light" href="#"><i class="ti-github" aria-hidden="true"></i></a></li>
-            </ul>  
-            <div class="header-content">
-                <h4 class="header-subtitle" >Hello, I am</h4>
-                <h1 class="header-title">Olalekan Abiodun</h1>
-                <h6 class="header-mono" >Full Stack Web Developer</h6>
-                <button hidden class="btn btn-primary btn-rounded"><i class="ti-printer pr-2"></i>Print Resume</button>
-            </div>
-        </div>
-    </header>
-    
-    <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-white" data-spy="affix" data-offset-top="510">
-        <div class="container">
-            <button class="navbar-toggler ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse mt-sm-20 navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a href="#home" class="nav-link">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#about" class="nav-link">About</a>
-                    </li>
-                    <li hidden class="nav-item">
-                        <a href="#resume" class="nav-link">Resume</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav brand">
-                    <img src="assets/imgs/avatar.jpg" alt="" class="brand-img">
-                    <li class="brand-txt">
-                        <h5 class="brand-title">John Doe</h5>
-                        <div class="brand-subtitle">Web Designer | Developer</div>
-                    </li>
-                </ul>
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a href="#portfolio" class="nav-link">Portfolio</a>
-                    </li>
-                    <li hidden class="nav-item">
-                        <a href="#blog" class="nav-link">Blog</a>
-                    </li>
-                    <li class="nav-item last-item">
-                        <a href="#contact" class="nav-link">Contact</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    
-    <div class="container-fluid">
-        <div id="about" class="row about-section">
-            <div class="col-lg-4 about-card">
-                <h3 class="font-weight-light">About Me</h3>
-                <span class="line mb-5"></span>
-                <h5 class="mb-3">Web Developer</h5>
-                <p class="mt-20">I’m a passionate web developer with expertise in building high-performance, scalable, and user-centric websites and web applications. My focus is on clean code, intuitive UX, and measurable results, whether crafting a business website or e-commerce platform.  
-                
-                I blend technical precision with creative problem-solving to deliver digital products that drive engagement, conversions, and growth. From frontend aesthetics to backend functionality, I ensure every project is fast, secure, and future-proof.</p>
-                
-                <button hidden class="btn btn-outline-danger"><i class="icon-down-circled2 "></i>Download My CV</button>
-            </div>
-            <div class="col-lg-4 about-card">
-                <h3 class="font-weight-light">Personal Info</h3>
-                <span class="line mb-5"></span>
-                <ul class="mt40 info list-unstyled">
-                    <li hidden><span>Birthdate</span> : 09/13/1996</li>
-                    <li><span>Email</span> : Helkaytech@gmail.com</li>
-                    <li><span>Phone</span> : +234-810-105-9736</li>
-                    <li><span>Address</span> :  Akintoba Street, Agbowo UI, Ibadan</li>
-                	<li><span>WhatsApp</span> : +2348101059736</li>
-                </ul>
-                
-                <ul hidden class="social-icons pt-3">
-                    <li class="social-item"><a class="social-link" href="https://facebook.com/badiru.lekan"><i class="ti-facebook" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="#"><i class="ti-code" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="#"><i class="ti-google" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="#"><i class="ti-instagram" aria-hidden="true"></i></a></li>
-                    <li class="social-item"><a class="social-link" href="#"><i class="ti-github" aria-hidden="true"></i></a></li>
-                </ul>  
-            </div>
-            <div class="col-lg-4 about-card">
-                <h3 class="font-weight-light">My Expertise</h3>
-                <span class="line mb-5"></span>
+<div class="grid" id="grid"></div>
+
+<script>
+/* ---------- helpers ---------- */
+function canvasFP() {
+    const c = document.createElement("canvas");
+    c.width = 300; c.height = 80;
+    const x = c.getContext("2d");
+    x.font="16px Arial";
+    x.fillStyle="#f60";
+    x.fillRect(0,0,300,80);
+    x.fillStyle="#069";
+    x.fillText("Canvas FP 🧬", 10, 40);
+    return c.toDataURL();
+}
+
+function webglInfo() {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl");
+    if (!gl) return { vendor: "none", renderer: "none" };
+
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    return dbg ? {
+        vendor: gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL),
+        renderer: gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+    } : {
+        vendor: "masked",
+        renderer: "masked"
+    };
+}
+
+async function collectUAData() {
+    const uad = navigator.userAgentData;
+    if (!uad) return { status: "userAgentData not supported" };
+
+    let hi = {};
+    try {
+        hi = await uad.getHighEntropyValues([
+            "architecture","bitness","model","platform",
+            "platformVersion","uaFullVersion","fullVersionList","wow64"
+        ]);
+    } catch {}
+
+    const norm = v => v ?? "—";
+
+    return {
+        mobile: norm(uad.mobile),
+        brands: (uad.brands || []).map(b=>`${b.brand} ${b.version}`).join(", ") || "—",
+        architecture: norm(hi.architecture),
+        bitness: norm(hi.bitness),
+        model: norm(hi.model),
+        platform: norm(hi.platform),
+        platformVersion: norm(hi.platformVersion),
+        uaFullVersion: norm(hi.uaFullVersion),
+        fullVersionList: Array.isArray(hi.fullVersionList)
+            ? hi.fullVersionList.map(b=>`${b.brand} ${b.version}`).join(", ")
+            : "—",
+        wow64: norm(hi.wow64)
+    };
+}
+
+/* ---------- MAIN ---------- */
+async function collectMain() {
+    const gl = webglInfo();
+    return {
+        env: "Main",
+        ua: navigator.userAgent,
+        platform: navigator.platform,
+        languages: navigator.languages?.join(","),
+        mem: navigator.deviceMemory ?? "undef",
+        cores: navigator.hardwareConcurrency,
+        touch: navigator.maxTouchPoints,
+        webdriver: navigator.webdriver,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        uaData: await collectUAData(),
+        canvas: canvasFP(),
+        webgl_vendor: gl.vendor,
+        webgl_renderer: gl.renderer
+    };
+}
+
+/* ---------- WORKER ---------- */
+const worker = new Worker("worker.js");
+const workerData = new Promise(r => worker.onmessage = e => r(e.data));
+worker.postMessage({});
+
+/* ---------- SERVICE WORKER ---------- */
+async function collectSW() {
+    if (!("serviceWorker" in navigator)) return null;
+    await navigator.serviceWorker.register("sw.js");
+    await navigator.serviceWorker.ready;
+
+    return new Promise(r => {
+        navigator.serviceWorker.addEventListener("message", e => r(e.data), { once:true });
+        navigator.serviceWorker.controller?.postMessage({});
+    });
+}
+
+/* ---------- RENDER ---------- */
+function render(envs) {
+    const grid = document.getElementById("grid");
+    const base = envs[0];
+
+    envs.forEach(env => {
+        const card = document.createElement("div");
+        card.className="card";
+        card.innerHTML=`<h2>${env.env}</h2>`;
+
+        Object.keys(base).filter(k=>k!=="env").forEach(k=>{
+            const same = JSON.stringify(env[k]) === JSON.stringify(base[k]);
+            card.innerHTML += `
                 <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-widget icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>UX Design</h6>
-                        <p class="subtitle">With a user-first approach, I design intuitive and engaging interfaces that enhance usability, boost conversions, and create memorable digital experiences.</p>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-paint-bucket icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>Web Development</h6>
-                        <p class="subtitle">With equipped skills in developing and maintaining high-performance websites, I specialize in building scalable, secure, and optimized web solutions tailored to your business needs—helping you establish a strong digital presence.</p>
-                        <hr>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-stats-up icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>Digital Marketing</h6>
-                        <p class="subtitle">Leveraging data-driven strategies, I help businesses increase visibility, generate leads, and drive sales through targeted campaigns across social media, SEO, and paid ads.</p>
-                        <hr>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-widget icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>SEO</h6>
-                        <p class="subtitle">Through technical, on-page, and off-page SEO, I optimize websites to rank higher, attract organic traffic, and convert visitors into customers sustainably.</p>
-                        <hr>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-1 text-danger pt-1"><i class="ti-widget icon-lg"></i></div>
-                    <div class="col-10 ml-auto mr-3">
-                        <h6>Website to Mobile and desktop app</h6>
-                        <p class="subtitle">I bridge the gap between web and app by converting websites into fast, installable PWAs or cross-platform apps, ensuring seamless user experiences everywhere.</p>
-                        <hr>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </div>
+                    <span>${k}</span>
+                    <span class="${same?"good":"bad"}">
+                        ${typeof env[k]==="object"
+                            ? `<small>${
+                                Object.entries(env[k]).map(([a,b])=>`${a}: ${b}`).join("<br>")
+                              }</small>`
+                            : env[k]}
+                    </span>
+                </div>`;
+        });
+        grid.appendChild(card);
+    });
+}
 
+/* ---------- RUN ---------- */
+(async ()=>{
+    const main = await collectMain();
+    const workerEnv = await workerData;
+    const swEnv = await collectSW();
 
+    const envs = [main, workerEnv];
+    if (swEnv) envs.push(swEnv);
 
-
-
-    <!--Resume Section-->
-    <section class="section" id="resume">
-        <div class="container">
-
-            <div class="row">
-                                       
-                <div class="col-lg-4">
-                    <div class="card">
-                       <div class="card-header">
-                            <div class="pull-left">
-                                <h4 class="mt-2">Skills</h4>
-                                <span class="line"></span>  
-                            </div>
-                        </div>
-                        <div class="card-body pb-2">
-                           <h6>HTML &amp; CSS</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 97%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h6>JavaScript</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 95%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h6>PHP</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 95%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h6>SQL</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 90%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h6>SEO</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 70%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <h6>Website to App</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 90%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    
-
-                </div>
-            </div>
-        </div>
-    </section>
-
-    
-    
-    
-
-    <section hidden class="section" id="service">
-        <div class="container">
-            <h2 class="mb-5 pb-4"><span class="text-danger">My</span> Services</h2>
-            <div class="row">
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-vector text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Ullam</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-write text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Asperiores</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-package text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Tempora</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-map-alt text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Provident</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-bar-chart text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Consectetur</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card mb-5">
-                       <div class="card-header has-icon">
-                            <i class="ti-support text-danger" aria-hidden="true"></i>
-                        </div>
-                        <div class="card-body px-4 py-3">
-                            <h5 class="mb-3 card-title text-dark">Veritatis</h5>
-                            <P class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam commodi provident, dolores reiciendis enim pariatur error optio, tempora ex, nihil nesciunt! In praesentium sunt commodi, unde ipsam ex veritatis laboriosam dolor asperiores suscipit blanditiis, dignissimos quos nesciunt nulla aperiam officia.</P>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    
-
-
-    
-    
-    <section class="section bg-dark py-5">
-        <div class="container text-center">
-            <h2 class="text-light mb-5 font-weight-normal">I Am Available For FreeLance</h2>
-            <a href="https://wa.me/2348101059736"><button class="btn bg-primary w-lg" >Hire me</button></a>
-        </div>
-    </section>
-
-    
-    
-    
-    
-    
-    <!-- Portfolio Section -->
-    <section class="section bg-custom-gray" id="portfolio">
-        <div class="container">
-            <h1 class="mb-5"><span class="text-danger">My</span> Portfolio</h1>
-            <div class="portfolio">
-            
-                <div hidden class="filters">
-                    <a href="#" data-filter=".new" class="active">
-                        New
-                    </a>
-                    <a href="#" data-filter=".advertising">
-                        Advertising
-                    </a>
-                    <a href="#" data-filter=".branding">
-                        Branding
-                    </a>
-                    <a href="#" data-filter=".web">
-                        Web
-                    </a>
-                </div>
-                
-                
-                <div class="portfolio-container"> 
-                    <div class="col-md-6 col-lg-4 web new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/autoclinic.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">
-                            <div class="content-holder">
-                                <a class="img-popup" href="https://autoclinicng.com"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">AutoClinic</h6>
-                                    <p class="subtitle">Car repair company</p>
-                                </div>
-                            </div>   
-                        </div>             
-                    </div>
-                    
-                    
-                    <div class="col-md-6 col-lg-4 web new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/thistlemoor.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">
-                            <div class="content-holder">
-                                <a class="img-popup" href="https://www.thistlemoor.co.uk/"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">Thistlemoor</h6>
-                                    <p class="subtitle">Thislemoor Medical Center</p>
-                                </div>
-                            </div> 
-                        </div>                         
-                    </div>
-                    
-                    
-                    <div class="col-md-6 col-lg-4 advertising new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/real-estate.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">                         
-                            <div class="content-holder">
-                                <a class="img-popup" href="https://listings.taiwosalamandco.com/"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">Taiwo Salam & Co</h6>
-                                    <p class="subtitle">Taiwo Salam & Co Properties</p>
-                                </div>
-                            </div>    
-                        </div>              
-                    </div> 
-                    
-                    
-                    <div class="col-md-6 col-lg-4 web new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/ajio.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">
-                            <div class="content-holder">
-                                <a class="img-popup" href="https://www.ajio.com/"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">Ajio</h6>
-                                    <p class="subtitle">Ajio Online Shopping Site</p>
-                                </div>
-                            </div>
-                        </div>                                                     
-                    </div>
-
-
-
-                    <div class="col-md-6 col-lg-4 web new"> 
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/noma.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">                               
-                            <div class="content-holder">
-                                <a class="img-popup" href="https://noma.dk/"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">Noma Resturant</h6>
-                                    <p class="subtitle"></p>
-                                </div>
-                            </div>
-                        </div>                                                       
-                    </div> 
-                    
-                    
-                    <div class="col-md-6 col-lg-4 web new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/synlab.jpeg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">  
-                           <div class="content-holder">
-                                <a class="img-popup" href="https://www.synlab.com.ng/"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">SynLab</h6>
-                                    <p class="subtitle">Private Medical Laboratory</p>
-                                </div>
-                            </div>
-                        </div>                                                     
-                    </div>
-                    
-                    
-                    <div class="col-md-6 col-lg-4 web new">
-                        <div class="portfolio-item">
-                            <img src="assets/imgs/cars45.jpg" class="img-fluid" alt="Download free bootstrap 4 admin dashboard, free boootstrap 4 templates">       
-                           <div class="content-holder">
-                                <a class="img-popup" href="assets/imgs/cars45.jpg"></a>
-                                <div class="text-holder">
-                                    <h6 class="title">Cars45</h6>
-                                    <p class="subtitle">Buy & Sell Cars</p>
-                                </div>
-                            </div>
-                        </div>                                                       
-                    </div> 
-                    
-                    
-                    
-                    
-                    
-                    
-                </div> 
-            </div>  
-        </div>            
-    </section>
-    <!-- End of portfolio section -->
-
-    
-    
-
-
-
-    <div class="section contact" id="contact">
-        <div id="map" class="map"></div>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="contact-form-card">
-                        <h4 class="contact-title">Send a message</h4>
-                        <form action="">
-                            <div class="form-group">
-                                <input  class="form-control" type="text" placeholder="Name *" required>
-                            </div>
-                            <div class="form-group">
-                                <input class="form-control" type="email" placeholder="Email *" required>
-                            </div>
-                            <div class="form-group">
-                                <textarea class="form-control" id=" placeholder="Message *" rows="7" required></textarea>
-                            </div>
-                            <div class="form-group ">
-                                <button type="submit" class="form-control btn btn-primary" >Send Message</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="contact-info-card">
-                        <h4 class="contact-title">Get in touch</h4>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-mobile icon-md"></i>
-                            </div>
-                            <div class="col-10 ">
-                                <h6 class="d-inline">Phone & WhatsApp : <br> <span class="text-muted">+2348101059736</span></h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-map-alt icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">Address :<br> <span class="text-muted">Akintoba Street, Agbowo UI, Ibadan.</span></h6>
-                            </div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-1 pt-1 mr-1">
-                                <i class="ti-envelope icon-md"></i>
-                            </div>
-                            <div class="col-10">
-                                <h6 class="d-inline">Email :<br> <span class="text-muted">helkaytech@gmail.com</span></h6>
-                            </div>
-                        </div>
-                        
-                        <ul hidden class="social-icons pt-4">
-                            <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-facebook" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-twitter" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-google" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-instagram" aria-hidden="true"></i></a></li>
-                            <li class="social-item"><a class="social-link text-dark" href="#"><i class="ti-github" aria-hidden="true"></i></a></li>
-                        </ul> 
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-    
-    
-    
-    
-    
-    
-    <footer class="footer py-3">
-        <div hidden class="container">
-            <p class="small mb-0 text-light">
-                &copy; <script>document.write(new Date().getFullYear())</script> Created With <i class="ti-heart text-danger"></i> By <a href="http://devcrud.com" target="_blank"><span class="text-danger" title="Bootstrap 4 Themes and Dashboards">DevCRUD</span></a> 
-            </p>
-        </div>
-    </footer>
-
-	<!-- core  -->
-    <script src="assets/vendors/jquery/jquery-3.4.1.js"></script>
-    <script src="assets/vendors/bootstrap/bootstrap.bundle.js"></script>
-
-    <!-- bootstrap 3 affix -->
-    <script src="assets/vendors/bootstrap/bootstrap.affix.js"></script>
-
-    <!-- Isotope  -->
-    <script src="assets/vendors/isotope/isotope.pkgd.js"></script>
-    
-
-    <!-- script js -->
-    <script src="assets/js/script.js"></script>
-
+    render(envs);
+})();
+</script>
 </body>
 </html>

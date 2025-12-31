@@ -40,13 +40,13 @@ h1 { text-align:center; }
 .row:last-child { border-bottom:none; }
 .good { color:#6bff95; }
 .bad { color:#ff5f5f; font-weight:bold; }
-small { color:#999; }
+small { color:#aaa; line-height:1.4; display:block; }
 </style>
 </head>
 
 <body>
 <h1>Advanced Navigator & API Spoof Detection</h1>
-<small>Red = mismatch → JS-only spoofing</small>
+<small>Red = mismatch vs Main environment</small>
 
 <div class="grid" id="grid"></div>
 
@@ -81,26 +81,44 @@ function webglFP() {
         : "masked";
 }
 
-async function uaData() {
+async function collectUAData() {
     const uad = navigator.userAgentData;
-    if (!uad) return null;
+    if (!uad) return { status: "userAgentData not supported" };
 
-    const hi = await uad.getHighEntropyValues([
-        "architecture",
-        "bitness",
-        "model",
-        "platform",
-        "platformVersion",
-        "uaFullVersion",
-        "fullVersionList",
-        "wow64"
-    ]);
+    let hi = {};
+    try {
+        hi = await uad.getHighEntropyValues([
+            "architecture",
+            "bitness",
+            "model",
+            "platform",
+            "platformVersion",
+            "uaFullVersion",
+            "fullVersionList",
+            "wow64"
+        ]);
+    } catch {
+        hi = {};
+    }
+
+    const norm = v =>
+        v === undefined || v === null || v === "" ? "—" : v;
 
     return {
-        mobile: uad.mobile,
-        brands: uad.brands,
-        bitness: uad.bitness
-        //...hi
+        mobile: norm(uad.mobile),
+        brands: (uad.brands || [])
+            .map(b => `${b.brand} ${b.version}`).join(", ") || "—",
+
+        architecture: norm(hi.architecture),
+        bitness: norm(hi.bitness),
+        model: norm(hi.model),
+        platform: norm(hi.platform),
+        platformVersion: norm(hi.platformVersion),
+        uaFullVersion: norm(hi.uaFullVersion),
+        fullVersionList: Array.isArray(hi.fullVersionList)
+            ? hi.fullVersionList.map(b => `${b.brand} ${b.version}`).join(", ")
+            : "—",
+        wow64: norm(hi.wow64)
     };
 }
 
@@ -116,7 +134,7 @@ async function collectMain() {
         touch: navigator.maxTouchPoints,
         webdriver: navigator.webdriver,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        uaData: await uaData(),
+        uaData: await collectUAData(),
         canvas: await sha256(canvasFP()),
         webgl: await sha256(webglFP())
     };
@@ -157,7 +175,11 @@ function render(envs) {
                     <span>${k}</span>
                     <span class="${same?"good":"bad"}">
                         ${typeof env[k]==="object"
-                            ? `<small>${JSON.stringify(env[k])}</small>`
+                            ? `<small>${
+                                Object.entries(env[k])
+                                  .map(([a,b]) => `${a}: ${b}`)
+                                  .join("<br>")
+                              }</small>`
                             : env[k]}
                     </span>
                 </div>`;

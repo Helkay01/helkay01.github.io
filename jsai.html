@@ -1,171 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>AI Page Assistant Demo</title>
+<meta charset="UTF-8">
+<title>Real AI Page Assistant</title>
 
 <style>
-
-body{
-    font-family:Arial,sans-serif;
-    margin:20px;
-    line-height:1.6;
+body {
+    font-family: Arial;
+    margin: 20px;
+    max-width: 900px;
 }
 
-.article{
-    max-width:900px;
+#panel {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    width: 350px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
 }
 
-#assistant{
-    position:fixed;
-    top:10px;
-    right:10px;
-    width:350px;
-    background:white;
-    border:1px solid #ccc;
-    padding:15px;
-    box-shadow:0 0 10px rgba(0,0,0,.2);
+textarea, input {
+    width: 100%;
+    margin-top: 5px;
 }
 
-button{
-    width:100%;
-    padding:10px;
-    cursor:pointer;
+button {
+    width: 100%;
+    margin-top: 5px;
+    padding: 10px;
 }
-
-#output{
-    margin-top:10px;
-    white-space:pre-wrap;
+pre {
+    white-space: pre-wrap;
 }
-
-.ai-summary{
-    margin-top:30px;
-    padding:20px;
-    background:#f0f0f0;
-    border-left:5px solid #555;
-}
-
 </style>
 </head>
+
 <body>
 
-<div id="assistant">
+<h1>Sample Blog: COVID-19 Update</h1>
+
+<p>
+COVID-19 has transitioned from a global emergency to an endemic respiratory illness.
+Vaccination programs, immunity buildup, and treatments have reduced severity.
+However, new variants continue to appear and seasonal waves still occur.
+</p>
+
+<p>
+Public health systems now focus on monitoring, vaccination updates,
+and protecting vulnerable populations rather than strict lockdowns.
+</p>
+
+<p>
+Experts emphasize that while COVID-19 is no longer a global crisis,
+it remains a public health concern requiring ongoing awareness.
+</p>
+
+<div id="panel">
 
 <h3>AI Page Assistant</h3>
 
-<button onclick="analyzePage()">
-Analyze Page
-</button>
+<button id="loadBtn">Load AI Model</button>
+<button id="summarizeBtn">Summarize Page</button>
 
-<div id="output"></div>
+<input id="question" placeholder="Ask a question...">
+<button id="askBtn">Ask</button>
 
-</div>
-
-<div class="article">
-
-<h1>Modern Web Browsers</h1>
-
-<p>
-    COVID-19 remains a part of our daily lives, transitioning from a global crisis to a manageable respiratory illness. While extreme lockdowns and mandates have ended, the virus still circulates, with variants emerging and seasonal spikes in cases. Adapting to this new normal involves staying informed and keeping up with health practices.The Evolution of the PandemicYears after its initial outbreak, the SARS-CoV-2 virus continues to mutate, resulting in various subvariants. Although widespread immunity—built through previous infections and vaccinations—has significantly reduced hospitalization and mortality rates, the virus remains a notable threat. Public health entities continue to track these variants to help guide vaccine composition and public health policies.Navigating the "New Normal"Learning to live with COVID-19 means understanding how to protect yourself and your community. Key practices include:Staying up-to-date with vaccines: Health authorities consistently update boosters and vaccines to target prevailing variants.Testing when symptomatic: If you experience cold or flu-like symptoms, taking an at-home test helps prevent spreading the virus to vulnerable individuals.Practicing good hygiene: Simple habits like frequent handwashing and wearing high-quality masks (like N95s or KN95s) in crowded, poorly ventilated indoor spaces remain highly effective.Prioritizing mental health: The pandemic brought prolonged stress and disruptions. Engaging in regular physical activity, maintaining social connections, and seeking counseling if necessary are vital for overall well-being.Reliable Resources and InformationStaying informed from trustworthy sources is your best defense. To check local transmission levels, review current vaccination guidelines, or find testing sites near you, rely on trusted organizations:Global Guidelines: Visit the World Health Organization for global data and public health updates.Local Health Authorities: If you are in Nigeria, refer to the Nigeria Centre for Disease Control and Prevention for real-time local statistics and specific travel advisories.U.S. & Travel Data: For international travelers or localized data tracking in the United States, check the Centers for Disease Control and Prevention.By remaining vigilant, listening to your body, and following evidence-based advice, you can protect yourself and your loved ones while safely navigating the ongoing presence of COVID-19
-</p>
+<pre id="output">Loading idle...</pre>
 
 </div>
 
-<script>
+<script type="module">
 
-function extractContent(){
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers";
 
-    let text = "";
+let generator;
+let pageText = "";
 
-    document
-        .querySelectorAll(".article p")
-        .forEach(p=>{
-            text += p.innerText + " ";
-        });
-
-    return text.trim();
+function extractText() {
+    return document.body.innerText
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 4000);
 }
 
-function generateSummary(text){
+async function loadModel() {
+    document.getElementById("output").innerText =
+        "Loading model (first time may take 1–5 min)...";
 
-    const sentences =
-        text.split(".");
+    generator = await pipeline(
+        "text-generation",
+        "onnx-community/Qwen2.5-0.5B-Instruct",
+        { dtype: "q4" }
+    );
 
-    return sentences
-        .slice(0,3)
-        .join(".")
-        .trim() + ".";
+    document.getElementById("output").innerText =
+        "Model loaded ✔";
 }
 
-function generateExplanation(text){
+async function summarize() {
 
-    return `
-This page explains how modern web browsers work.
+    pageText = extractText();
 
-Main ideas:
-• Browsers render websites.
-• Browsers execute JavaScript.
-• Browsers support modern technologies.
-• Browsers include security and privacy features.
-• Browsers can run advanced web applications.
+    const prompt =
+`Summarize this page and explain simply:
 
-Overall, the article describes the role and evolution of modern browsers.
-`;
+${pageText}`;
+
+    const result = await generator(prompt, {
+        max_new_tokens: 200,
+        temperature: 0.5,
+        do_sample: true
+    });
+
+    document.getElementById("output").innerText =
+        result[0].generated_text;
 }
 
-function analyzePage(){
+async function askQuestion() {
 
-    const content =
-        extractContent();
+    const q = document.getElementById("question").value;
 
-    const summary =
-        generateSummary(content);
+    const prompt =
+`You are an assistant answering ONLY from the page content.
 
-    const explanation =
-        generateExplanation(content);
+PAGE:
+${pageText}
 
-    document
-        .getElementById("output")
-        .innerText =
-`
-SUMMARY
+QUESTION:
+${q}
 
-${summary}
+Answer clearly:`;
 
-EXPLANATION
+    const result = await generator(prompt, {
+        max_new_tokens: 150
+    });
 
-${explanation}
-`;
-
-    const existing =
-        document.querySelector(
-            ".ai-summary"
-        );
-
-    if(existing)
-        existing.remove();
-
-    const div =
-        document.createElement("div");
-
-    div.className =
-        "ai-summary";
-
-    div.innerHTML =
-`
-<h2>AI Generated Analysis</h2>
-
-<h3>Summary</h3>
-<p>${summary}</p>
-
-<h3>Explanation</h3>
-<pre>${explanation}</pre>
-`;
-
-    document.body.appendChild(div);
+    document.getElementById("output").innerText =
+        result[0].generated_text;
 }
+
+document.getElementById("loadBtn").onclick = loadModel;
+document.getElementById("summarizeBtn").onclick = summarize;
+document.getElementById("askBtn").onclick = askQuestion;
 
 </script>
 
 </body>
-  </html>
+</html>

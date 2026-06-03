@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AI Page Assistant Demo</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    margin:20px;
+    line-height:1.6;
+}
+
+.article{
+    max-width:900px;
+}
+
+#assistant{
+    position:fixed;
+    top:10px;
+    right:10px;
+    width:350px;
+    background:white;
+    border:1px solid #ccc;
+    padding:15px;
+    box-shadow:0 0 10px rgba(0,0,0,.2);
+}
+
+button{
+    width:100%;
+    padding:10px;
+    cursor:pointer;
+}
+
+#output{
+    margin-top:10px;
+    white-space:pre-wrap;
+}
+
+.ai-summary{
+    margin-top:30px;
+    padding:20px;
+    background:#f0f0f0;
+    border-left:5px solid #555;
+}
+
+</style>
+</head>
+<body>
+
+<div id="assistant">
+
+<h3>AI Page Assistant</h3>
+
+<button onclick="analyzePage()">
+Analyze Page
+</button>
+
+<div id="output"></div>
+
+</div>
+
+<div class="article">
+
+<h1>Modern Web Browsers</h1>
+
+<p>
+Modern browsers have evolved significantly over the last decade.
+They support advanced JavaScript engines, WebAssembly, WebGPU,
+and sophisticated security models.
+</p>
+
+<p>
+A browser renders web pages, executes scripts,
+manages storage, communicates with servers,
+and provides a user interface for navigation.
+</p>
+
+<p>
+Many modern browsers now include privacy protections,
+tracking prevention, sandboxing technologies,
+and hardware acceleration.
+</p>
+
+<p>
+Developers use browsers not only to display websites
+but also to run complex applications including games,
+video editors, artificial intelligence tools,
+and productivity software.
+</p>
+
+<p>
+Web standards continue to evolve through collaboration
+between browser vendors and standards organizations.
+</p>
+
+</div>
+
+<script>
+
+function extractContent(){
+
+    let text = "";
+
+    document
+        .querySelectorAll(".article p")
+        .forEach(p=>{
+            text += p.innerText + " ";
+        });
+
+    return text.trim();
+}
+
+function generateSummary(text){
+
+    const sentences =
+        text.split(".");
+
+    return sentences
+        .slice(0,3)
+        .join(".")
+        .trim() + ".";
+}
+
+function generateExplanation(text){
+
+    return `
+This page explains how modern web browsers work.
+
+Main ideas:
+• Browsers render websites.
+• Browsers execute JavaScript.
+• Browsers support modern technologies.
+• Browsers include security and privacy features.
+• Browsers can run advanced web applications.
+
+Overall, the article describes the role and evolution of modern browsers.
+`;
+}
+
+function analyzePage(){
+
+    const content =
+        extractContent();
+
+    const summary =
+        generateSummary(content);
+
+    const explanation =
+        generateExplanation(content);
+
+    document
+        .getElementById("output")
+        .innerText =
+`
+SUMMARY
+
+${summary}
+
+EXPLANATION
+
+${explanation}
+`;
+
+    const existing =
+        document.querySelector(
+            ".ai-summary"
+        );
+
+    if(existing)
+        existing.remove();
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "ai-summary";
+
+    div.innerHTML =
+`
+<h2>AI Generated Analysis</h2>
+
+<h3>Summary</h3>
+<p>${summary}</p>
+
+<h3>Explanation</h3>
+<pre>${explanation}</pre>
+`;
+
+    document.body.appendChild(div);
+}
+
+</script>
+
+</body>
+  </html>

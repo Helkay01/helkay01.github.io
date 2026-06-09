@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Leak Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 { margin-top: 0; color: #2c3e50; }
+        .status { font-weight: bold; margin-bottom: 15px; color: #7f8c8d; }
+        .ip-box {
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 5px solid #ccc;
+            background: #fdfdfd;
+            border-radius: 4px;
+        }
+        .local { border-left-color: #3498db; background: #e8f4fd; }
+        .public { border-left-color: #e74c3c; background: #fdeae8; }
+        .ipv6 { border-left-color: #9b59b6; background: #f5eef8; }
+        .label { font-weight: bold; display: block; font-size: 0.85em; color: #555; }
+        .ip-value { font-family: monospace; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>WebRTC IP Leak Analyzer</h2>
+    <div id="status" class="status">Analyzing your connection network...</div>
+    <div id="results"></div>
+</div>
+
+<script>
+async function detectWebRTCLeaks() {
+    return new Promise((resolve) => {
+        const discoveredIPs = new Set();
+        
+        const rtcConfig = {
+            iceServers: [{ urls: "stun:://google.com" }]
+        };
+
+        const rtcConnection = new RTCPeerConnection(rtcConfig);
+        rtcConnection.createDataChannel(""); 
+
+        rtcConnection.onicecandidate = (event) => {
+            if (!event || !event.candidate) {
+                resolve(Array.from(discoveredIPs));
+                return;
+            }
+
+            const candidateLine = event.candidate.candidate;
+            const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9:]+:[a-f0-9:]+)/i;
+            const parsedMatch = ipRegex.exec(candidateLine);
+
+            if (parsedMatch) {
+                const detectedIP = parsedMatch[1];
+                if (!detectedIP.endsWith(".255")) {
+                    discoveredIPs.add(detectedIP);
+                }
+            }
+        };
+
+        rtcConnection.createOffer()
+            .then(offer => rtcConnection.setLocalDescription(offer))
+            .catch(err => {
+                document.getElementById('status').innerText = "WebRTC is completely blocked or unsupported.";
+                resolve([]);
+            });
+            
+        setTimeout(() => {
+            resolve(Array.from(discoveredIPs));
+        }, 2000);
+    });
+}
+
+// Run the script and output directly to the screen HTML
+detectWebRTCLeaks().then((ips) => {
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    
+    statusDiv.innerText = "Analysis complete. Displaying exposed IPs below:";
+
+    if (ips.length === 0) {
+        resultsDiv.innerHTML = "<p>No network paths exposed. WebRTC leaks are shielded.</p>";
+        return;
+    }
+
+    ips.forEach(ip => {
+        const item = document.createElement('div');
+        item.classList.add('ip-box');
+        
+        let labelText = "";
+        
+        if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
+            item.classList.add('local');
+            labelText = "INTERNAL LOCAL IP (Safe - Router assigned)";
+        } else if (ip.includes(":")) {
+            item.classList.add('ipv6');
+            labelText = "IPv6 NETWORK ADDRESS (Leaked)";
+        } else {
+            item.classList.add('public');
+            labelText = "PUBLIC / CARRIER IP (Leaked via STUN Bypass)";
+        }
+
+        item.innerHTML = `<span class="label">${labelText}</span><span class="ip-value">${ip}</span>`;
+        resultsDiv.appendChild(item);
+    });
+});
+</script>
+
+</body>
+</html>

@@ -35,6 +35,10 @@
             margin-bottom: 15px;
             color: #e94560;
         }
+        .section h2.warn {
+            border-bottom-color: #ffb86b;
+            color: #ffb86b;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -56,18 +60,9 @@
             font-family: monospace;
             font-size: 15px;
         }
-        .pass {
-            color: #53d769;
-            font-weight: bold;
-        }
-        .fail {
-            color: #ff6b6b;
-            font-weight: bold;
-        }
-        .warn {
-            color: #ffb86b;
-            font-weight: bold;
-        }
+        .pass { color: #53d769; font-weight: bold; }
+        .fail { color: #ff6b6b; font-weight: bold; }
+        .warn { color: #ffb86b; font-weight: bold; }
         .event-log {
             background: #0f3460;
             padding: 15px;
@@ -82,6 +77,14 @@
             padding: 5px;
             border-bottom: 1px solid #1a3a5c;
         }
+        .event-entry.bad {
+            background: #4d1a1a;
+            color: #ff6b6b;
+        }
+        .event-entry.good {
+            background: #1a4d1a;
+            color: #53d769;
+        }
         .event-time {
             color: #888;
             font-size: 11px;
@@ -92,28 +95,49 @@
             border-radius: 3px;
             font-size: 12px;
             font-weight: bold;
+            margin-left: 10px;
         }
         .badge-pass { background: #1a4d1a; color: #53d769; }
         .badge-fail { background: #4d1a1a; color: #ff6b6b; }
         .badge-warn { background: #4d3a1a; color: #ffb86b; }
+        .summary {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .summary.ok { background: #1a4d1a; color: #53d769; }
+        .summary.bad { background: #4d1a1a; color: #ff6b6b; }
+        .summary.partial { background: #4d3a1a; color: #ffb86b; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🛡️ Advanced Anti-Detection Test</h1>
-    
+
     <div class="section">
         <h2>📋 Test Instructions</h2>
-        <p>1. Watch values below</p>
-        <p>2. Switch to another tab and come back</p>
-        <p>3. Minimize browser and restore</p>
-        <p>4. Check if any value changes or events fire</p>
+        <p>1. Watch the values and event log below</p>
+        <p>2. Switch to another app / tab and come back</p>
+        <p>3. Minimize the app and restore</p>
+        <p>4. Arrange apps in freeform mode side by side</p>
+        <p><b>Expected with correct patches:</b> No BLUR, FOCUS, or VISIBILITYCHANGE entries should appear</p>
     </div>
 
     <div class="section">
-        <h2>🔍 Core Visibility State</h2>
+        <h2>🔍 Core Visibility & Focus State</h2>
         <table id="visibilityTable"></table>
+    </div>
+
+    <div class="section" id="eventsSection">
+        <h2 class="warn">⚠️ Event Log — WATCH THIS CAREFULLY</h2>
+        <p>Any entry marked in <span class="fail">red</span> means a detection event fired.</p>
+        <div class="event-log" id="eventLog">
+            <div class="event-entry">Waiting for events...</div>
+        </div>
+        <div class="summary" id="eventSummary">No events fired yet</div>
     </div>
 
     <div class="section">
@@ -140,33 +164,53 @@
         <h2>🌐 Network Throttling</h2>
         <table id="networkTable"></table>
     </div>
-
-    <div class="section">
-        <h2>📡 Event Log</h2>
-        <div class="event-log" id="eventLog"></div>
-    </div>
 </div>
 
 <script>
-// Event Log
+// ---------- Event Log ----------
 const eventLog = document.getElementById('eventLog');
-function addEvent(message) {
+const eventSummary = document.getElementById('eventSummary');
+let badEventCount = 0;
+let goodEventCount = 0;
+let logStarted = false;
+
+function addEvent(message, isBad = true) {
+    if (!logStarted) {
+        eventLog.innerHTML = '';
+        logStarted = true;
+    }
     const now = new Date();
     const timeStr = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
     const entry = document.createElement('div');
-    entry.className = 'event-entry';
+    entry.className = 'event-entry ' + (isBad ? 'bad' : 'good');
     entry.innerHTML = `<span class="event-time">[${timeStr}]</span> ${message}`;
     eventLog.appendChild(entry);
     eventLog.scrollTop = eventLog.scrollHeight;
+
+    if (isBad) badEventCount++; else goodEventCount++;
+    updateEventSummary();
 }
 
-// Core Visibility State
+function updateEventSummary() {
+    if (badEventCount === 0 && goodEventCount === 0) {
+        eventSummary.className = 'summary partial';
+        eventSummary.textContent = 'No events fired yet — try switching apps';
+    } else if (badEventCount === 0) {
+        eventSummary.className = 'summary ok';
+        eventSummary.textContent = `✅ PASS — No detection events fired (${goodEventCount} benign events)`;
+    } else {
+        eventSummary.className = 'summary bad';
+        eventSummary.textContent = `❌ FAIL — ${badEventCount} detection event(s) fired`;
+    }
+}
+
+// ---------- Visibility State Table ----------
 function updateVisibilityTable() {
     const hasFocus = document.hasFocus();
     const visibilityState = document.visibilityState;
     const hidden = document.hidden;
-    const isConnected = document.isConnected;
-    
+    const activeEl = document.activeElement ? document.activeElement.tagName : 'null';
+
     document.getElementById('visibilityTable').innerHTML = `
         <tr><th>Property</th><th>Value</th><th>Status</th></tr>
         <tr>
@@ -185,37 +229,35 @@ function updateVisibilityTable() {
             <td>${!hidden ? '<span class="pass">✅ Not Hidden</span>' : '<span class="fail">❌ Hidden</span>'}</td>
         </tr>
         <tr>
-            <td>document.isConnected</td>
-            <td>${isConnected}</td>
-            <td>${isConnected ? '<span class="pass">✅ Connected</span>' : '<span class="fail">❌ Disconnected</span>'}</td>
+            <td>document.activeElement</td>
+            <td>${activeEl}</td>
+            <td>${activeEl !== 'null' ? '<span class="pass">✅ Active</span>' : '<span class="warn">⚠️ None</span>'}</td>
         </tr>
     `;
 }
 
-// Timer Throttling Detection
+// ---------- Timer Throttling Test ----------
 function testTimerThrottling() {
     let count = 0;
     const start = performance.now();
-    const expectedIntervals = 10;
-    const intervalMs = 100;
-    
+    const expected = 10 * 100;
+
     const interval = setInterval(() => {
         count++;
-        if (count >= expectedIntervals) {
+        if (count >= 10) {
             clearInterval(interval);
             const elapsed = performance.now() - start;
-            const expected = expectedIntervals * intervalMs;
             const ratio = elapsed / expected;
-            
+
             let status;
             if (ratio < 1.5) {
-                status = '<span class="pass">✅ Full Speed (Foreground)</span>';
+                status = '<span class="pass">✅ Full Speed</span>';
             } else if (ratio < 10) {
                 status = '<span class="warn">⚠️ Slightly Throttled</span>';
             } else {
-                status = '<span class="fail">❌ Heavily Throttled (Background)</span>';
+                status = '<span class="fail">❌ Heavily Throttled</span>';
             }
-            
+
             document.getElementById('timerTable').innerHTML = `
                 <tr><th>Test</th><th>Result</th><th>Status</th></tr>
                 <tr>
@@ -225,69 +267,51 @@ function testTimerThrottling() {
                 </tr>
             `;
         }
-    }, intervalMs);
+    }, 100);
 }
 
-// Animation Frame Throttling
-function testRAFThrottling() {
+// ---------- rAF Throttling Test ----------
+function testRAF() {
     let rafCount = 0;
     const start = performance.now();
     let done = false;
-    
-    function rafLoop() {
+
+    function loop() {
         if (done) return;
         rafCount++;
-        const elapsed = performance.now() - start;
-        
-        if (elapsed >= 1000) {
+        if (performance.now() - start >= 1000) {
             done = true;
             const fps = rafCount;
-            
             let status;
-            if (fps > 50) {
-                status = '<span class="pass">✅ Full Speed (~60 FPS)</span>';
-            } else if (fps > 20) {
-                status = '<span class="warn">⚠️ Partially Throttled</span>';
-            } else {
-                status = '<span class="fail">❌ Heavily Throttled (~0 FPS)</span>';
-            }
-            
+            if (fps > 50) status = '<span class="pass">✅ Full Speed (~60 FPS)</span>';
+            else if (fps > 20) status = '<span class="warn">⚠️ Partially Throttled</span>';
+            else status = '<span class="fail">❌ Heavily Throttled</span>';
+
             document.getElementById('rafTable').innerHTML = `
                 <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-                <tr>
-                    <td>requestAnimationFrame (1 sec)</td>
-                    <td>${fps} FPS</td>
-                    <td>${status}</td>
-                </tr>
+                <tr><td>requestAnimationFrame (1s)</td><td>${fps} FPS</td><td>${status}</td></tr>
             `;
             return;
         }
-        requestAnimationFrame(rafLoop);
+        requestAnimationFrame(loop);
     }
-    requestAnimationFrame(rafLoop);
+    requestAnimationFrame(loop);
 }
 
-// Intersection Observer
-function testIntersectionObserver() {
+// ---------- IntersectionObserver Test ----------
+function testIntersection() {
     const testDiv = document.createElement('div');
-    testDiv.style.cssText = 'position:fixed;top:0;left:0;width:50px;height:50px;background:transparent;';
+    testDiv.style.cssText = 'position:fixed;top:0;left:0;width:50px;height:50px;background:transparent;pointer-events:none;';
     document.body.appendChild(testDiv);
-    
-    let lastState = null;
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            const isIntersecting = entry.isIntersecting;
-            if (isIntersecting !== lastState) {
-                lastState = isIntersecting;
-                addEvent(`IntersectionObserver: isIntersecting = ${isIntersecting}`);
-            }
-            
             document.getElementById('intersectionTable').innerHTML = `
                 <tr><th>Test</th><th>Result</th><th>Status</th></tr>
                 <tr>
                     <td>Element isIntersecting</td>
-                    <td>${isIntersecting}</td>
-                    <td>${isIntersecting ? '<span class="pass">✅ Visible</span>' : '<span class="fail">❌ Not Visible</span>'}</td>
+                    <td>${entry.isIntersecting}</td>
+                    <td>${entry.isIntersecting ? '<span class="pass">✅ Visible</span>' : '<span class="fail">❌ Not Visible</span>'}</td>
                 </tr>
             `;
         });
@@ -295,132 +319,118 @@ function testIntersectionObserver() {
     observer.observe(testDiv);
 }
 
-// Idle Detection
-async function testIdleDetection() {
+// ---------- Idle Detection Test ----------
+async function testIdle() {
+    const table = document.getElementById('idleTable');
     try {
         if ('IdleDetector' in window) {
-            const permission = await IdleDetector.requestPermission();
-            if (permission === 'granted') {
-                const idleDetector = new IdleDetector();
-                idleDetector.addEventListener('change', () => {
-                    const userState = idleDetector.userState;
-                    const screenState = idleDetector.screenState;
-                    
-                    document.getElementById('idleTable').innerHTML = `
+            const perm = await IdleDetector.requestPermission();
+            if (perm === 'granted') {
+                const detector = new IdleDetector();
+                detector.addEventListener('change', () => {
+                    table.innerHTML = `
                         <tr><th>Test</th><th>Result</th><th>Status</th></tr>
                         <tr>
-                            <td>User State</td>
-                            <td>${userState}</td>
-                            <td>${userState === 'active' ? '<span class="pass">✅ Active</span>' : '<span class="fail">❌ Idle</span>'}</td>
+                            <td>User State</td><td>${detector.userState}</td>
+                            <td>${detector.userState === 'active' ? '<span class="pass">✅ Active</span>' : '<span class="fail">❌ Idle</span>'}</td>
                         </tr>
                         <tr>
-                            <td>Screen State</td>
-                            <td>${screenState}</td>
-                            <td>${screenState === 'unlocked' ? '<span class="pass">✅ Unlocked</span>' : '<span class="fail">❌ Locked</span>'}</td>
+                            <td>Screen State</td><td>${detector.screenState}</td>
+                            <td>${detector.screenState === 'unlocked' ? '<span class="pass">✅ Unlocked</span>' : '<span class="fail">❌ Locked</span>'}</td>
                         </tr>
                     `;
                 });
-                await idleDetector.start();
+                await detector.start();
             } else {
-                document.getElementById('idleTable').innerHTML = `
-                    <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-                    <tr><td>IdleDetector</td><td>Permission denied</td><td><span class="warn">⚠️ Not Available</span></td></tr>
-                `;
+                table.innerHTML = `<tr><th>Test</th><th>Result</th><th>Status</th></tr>
+                    <tr><td>IdleDetector</td><td>Permission denied</td><td><span class="warn">⚠️ Unavailable</span></td></tr>`;
             }
         } else {
-            document.getElementById('idleTable').innerHTML = `
-                <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-                <tr><td>IdleDetector</td><td>Not supported</td><td><span class="warn">⚠️ Not Available</span></td></tr>
-            `;
+            table.innerHTML = `<tr><th>Test</th><th>Result</th><th>Status</th></tr>
+                <tr><td>IdleDetector</td><td>Not supported</td><td><span class="warn">⚠️ Unavailable</span></td></tr>`;
         }
     } catch (e) {
-        document.getElementById('idleTable').innerHTML = `
-            <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-            <tr><td>IdleDetector</td><td>${e.message}</td><td><span class="warn">⚠️ Error</span></td></tr>
-        `;
+        table.innerHTML = `<tr><th>Test</th><th>Result</th><th>Status</th></tr>
+            <tr><td>IdleDetector</td><td>${e.message}</td><td><span class="warn">⚠️ Error</span></td></tr>`;
     }
 }
 
-// Network Throttling
-function testNetworkThrottling() {
+// ---------- Network Throttling Test ----------
+function testNetwork() {
     const start = performance.now();
-    
     fetch('data:text/plain,test', { cache: 'no-store' })
         .then(() => {
             const elapsed = performance.now() - start;
-            
             let status;
-            if (elapsed < 100) {
-                status = '<span class="pass">✅ Immediate</span>';
-            } else if (elapsed < 500) {
-                status = '<span class="warn">⚠️ Slight Delay</span>';
-            } else {
-                status = '<span class="fail">❌ Delayed (Throttled)</span>';
-            }
-            
+            if (elapsed < 100) status = '<span class="pass">✅ Immediate</span>';
+            else if (elapsed < 500) status = '<span class="warn">⚠️ Slight Delay</span>';
+            else status = '<span class="fail">❌ Throttled</span>';
+
             document.getElementById('networkTable').innerHTML = `
                 <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-                <tr>
-                    <td>Network Request</td>
-                    <td>${elapsed.toFixed(0)}ms</td>
-                    <td>${status}</td>
-                </tr>
+                <tr><td>Network Request</td><td>${elapsed.toFixed(0)}ms</td><td>${status}</td></tr>
             `;
         })
-        .catch((e) => {
+        .catch(e => {
             document.getElementById('networkTable').innerHTML = `
                 <tr><th>Test</th><th>Result</th><th>Status</th></tr>
-                <tr><td>Network Request</td><td>Error: ${e.message}</td><td><span class="fail">❌ Failed</span></td></tr>
+                <tr><td>Network Request</td><td>${e.message}</td><td><span class="fail">❌ Failed</span></td></tr>
             `;
         });
 }
 
-// Event Listeners
+// ---------- Event Listeners (The Real Test) ----------
 window.addEventListener('blur', () => {
-    addEvent('❌ BLUR event fired - Page LOST focus');
+    addEvent('❌ WINDOW BLUR event fired — page lost focus', true);
     updateVisibilityTable();
 });
 
 window.addEventListener('focus', () => {
-    addEvent('✅ FOCUS event fired');
+    addEvent('ℹ️ WINDOW FOCUS event fired', false);
     updateVisibilityTable();
 });
 
 document.addEventListener('visibilitychange', () => {
-    addEvent(`⚠️ VISIBILITYCHANGE - Now: ${document.visibilityState}`);
+    addEvent(`❌ VISIBILITYCHANGE event — now: ${document.visibilityState}`, true);
     updateVisibilityTable();
 });
 
 window.addEventListener('pagehide', () => {
-    addEvent('❌ PAGEHIDE event fired');
+    addEvent('❌ PAGEHIDE event fired', true);
 });
 
 window.addEventListener('pageshow', () => {
-    addEvent('✅ PAGESHOW event fired');
+    addEvent('ℹ️ PAGESHOW event fired', false);
 });
 
 window.addEventListener('freeze', () => {
-    addEvent('❌ FREEZE event fired - Page frozen');
+    addEvent('❌ FREEZE event fired', true);
 });
 
 window.addEventListener('resume', () => {
-    addEvent('✅ RESUME event fired');
+    addEvent('ℹ️ RESUME event fired', false);
 });
 
-// Periodic updates
-setInterval(() => {
-    updateVisibilityTable();
-}, 500);
+// Element-level blur/focus (for completeness)
+document.addEventListener('focusin', () => {
+    // Benign - element gained focus, not a detection event
+});
+document.addEventListener('focusout', () => {
+    // Benign - element lost focus, not a detection event
+});
 
-// Initial run
+// ---------- Periodic Refresh ----------
+setInterval(updateVisibilityTable, 500);
+
+// ---------- Initial Run ----------
 updateVisibilityTable();
 testTimerThrottling();
-testRAFThrottling();
-testIntersectionObserver();
-testIdleDetection();
-testNetworkThrottling();
+testRAF();
+testIntersection();
+testIdle();
+testNetwork();
 
-addEvent('✅ All tests started - Switch tabs to test!');
+addEvent('✅ Test started — switch apps, minimize, or use freeform mode to test', false);
 </script>
 
 </body>

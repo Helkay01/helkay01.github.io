@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Touch & Pointer Stealth Test</title>
+    <style>
+        body {
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: #0d0d1a;
+            color: #eee;
+            margin: 0;
+            padding: 16px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        h1 {
+            text-align: center;
+            color: #e94560;
+            margin: 0 0 12px 0;
+            font-size: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .section {
+            background: #16213e;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .section h2 {
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 6px;
+            margin: 0 0 10px 0;
+            color: #e94560;
+            font-size: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid #2a3a5c;
+            font-size: 13px;
+            vertical-align: top;
+        }
+        th {
+            background: #0f3460;
+            color: #53d769;
+            width: 40%;
+            font-weight: 600;
+        }
+        td {
+            color: #ddd;
+            font-family: ui-monospace, "SF Mono", Consolas, monospace;
+            font-size: 12px;
+        }
+        .pass { color: #53d769; font-weight: bold; }
+        .fail { color: #ff6b6b; font-weight: bold; }
+        .warn { color: #ffb86b; font-weight: bold; }
+        .event-log {
+            background: #0f3460;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: ui-monospace, monospace;
+            font-size: 11px;
+            max-height: 260px;
+            overflow-y: auto;
+            margin: 8px 0;
+        }
+        .event-entry {
+            padding: 3px 4px;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        .event-entry.good { color: #53d769; }
+        .event-entry.bad  { color: #ff6b6b; }
+        .event-entry.info { color: #6b9fff; }
+        .event-time { color: #888; font-size: 10px; margin-right: 6px; }
+        .summary {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 14px;
+        }
+        .summary.ok    { background: #1a4d1a; color: #53d769; }
+        .summary.bad   { background: #4d1a1a; color: #ff6b6b; }
+        .summary.partial { background: #4d3a1a; color: #ffb86b; }
+        .touch-zone {
+            background: #0f3460;
+            border: 2px dashed #e94560;
+            border-radius: 8px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e94560;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🖐️ Touch & Pointer Stealth Test</h1>
+
+    <div class="section">
+        <h2>📋 How to Test</h2>
+        <p>1. Scroll inside the box below (or anywhere on the page)</p>
+        <p>2. Watch the event log and field values</p>
+        <p>3. All checks should show ✅ PASS with your patches</p>
+    </div>
+
+    <div class="section">
+        <h2>👇 Touch Test Zone</h2>
+        <div class="touch-zone" id="touchZone">
+            Swipe / scroll here to generate touch events
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Latest Touch Fields</h2>
+        <table id="touchTable">
+            <tr><th>Field</th><th>Value</th></tr>
+            <tr><td colspan="2" class="warn">No touch yet — interact with the page</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Latest PointerEvent Fields</h2>
+        <table id="pointerTable">
+            <tr><th>Field</th><th>Value</th></tr>
+            <tr><td colspan="2" class="warn">No pointer event yet — interact with the page</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎬 Event Sequence (per gesture)</h2>
+        <div class="event-log" id="sequenceLog">
+            <div class="event-entry info">Waiting for gesture...</div>
+        </div>
+        <table id="sequenceTable">
+            <tr><th>Expected Sequence</th><th>Status</th></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🆔 Pointer ID Consistency</h2>
+        <table id="idTable">
+            <tr><th>Metric</th><th>Value</th></tr>
+            <tr><td>Unique pointer IDs seen</td><td id="idUnique">-</td></tr>
+            <tr><td>Last pointer ID</td><td id="idLast">-</td></tr>
+            <tr><td>Status</td><td id="idStatus" class="warn">-</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>⏱️ Gesture Timing Distribution</h2>
+        <table id="timingTable">
+            <tr><th>Metric</th><th>Value</th></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📡 Full Event Log</h2>
+        <div class="event-log" id="eventLog">
+            <div class="event-entry info">Waiting for events...</div>
+        </div>
+        <div class="summary partial" id="summary">Waiting for interaction</div>
+    </div>
+</div>
+
+<script>
+// ---------- State ----------
+const state = {
+    gestureEvents: [],
+    pointerIds: new Set(),
+    gestureStartTime: 0,
+    gestureTimings: [],
+    lastGestureTime: 0,
+    passCount: 0,
+    failCount: 0,
+    warnCount: 0
+};
+
+// ---------- DOM refs ----------
+const eventLog = document.getElementById('eventLog');
+const sequenceLog = document.getElementById('sequenceLog');
+const summary = document.getElementById('summary');
+const touchTable = document.getElementById('touchTable');
+const pointerTable = document.getElementById('pointerTable');
+const sequenceTable = document.getElementById('sequenceTable');
+const timingTable = document.getElementById('timingTable');
+
+// ---------- Logging ----------
+function logEvent(msg, type = 'info') {
+    const t = new Date();
+    const ts = t.toLocaleTimeString() + '.' + String(t.getMilliseconds()).padStart(3, '0');
+    const el = document.createElement('div');
+    el.className = 'event-entry ' + type;
+    el.innerHTML = `<span class="event-time">[${ts}]</span>${msg}`;
+    eventLog.appendChild(el);
+    eventLog.scrollTop = eventLog.scrollHeight;
+}
+
+function logSequence(msg, type = 'info') {
+    const t = new Date();
+    const ts = t.toLocaleTimeString() + '.' + String(t.getMilliseconds()).padStart(3, '0');
+    const el = document.createElement('div');
+    el.className = 'event-entry ' + type;
+    el.innerHTML = `<span class="event-time">[${ts}]</span>${msg}`;
+    sequenceLog.appendChild(el);
+    sequenceLog.scrollTop = sequenceLog.scrollHeight;
+}
+
+// ---------- Field validation ----------
+function checkField(label, value, validator, hint = '') {
+    let ok = false;
+    try { ok = validator(value); } catch (e) { ok = false; }
+    if (ok) state.passCount++;
+    else     state.failCount++;
+    const cls = ok ? 'pass' : 'fail';
+    const sym = ok ? '✅' : '❌';
+    return `<tr>
+        <td>${label}</td>
+        <td><span class="${cls}">${sym} ${String(value)}</span>${hint ? ' <i style="color:#888">' + hint + '</i>' : ''}</td>
+    </tr>`;
+}
+
+// ---------- Touch events ----------
+document.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (!t) return;
+
+    state.gestureEvents = ['touchstart'];
+    state.gestureStartTime = performance.now();
+    sequenceLog.innerHTML = '';
+
+    logEvent(`touchstart — isTrusted: ${e.isTrusted}, id: ${t.identifier}`, e.isTrusted ? 'good' : 'bad');
+    logSequence(`touchstart`, 'good');
+
+    updateTouchTable(e, t);
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    if (!t) return;
+
+    if (!state.gestureEvents.includes('touchmove')) {
+        state.gestureEvents.push('touchmove');
+        logSequence(`touchmove (first)`, 'good');
+    }
+    updateTouchTable(e, t);
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+    const t = e.changedTouches[0];
+    if (!t) return;
+
+    state.gestureEvents.push('touchend');
+    logSequence(`touchend`, 'good');
+
+    const dur = performance.now() - state.gestureStartTime;
+    state.gestureTimings.push(dur);
+
+    logEvent(`touchend — duration: ${dur.toFixed(0)}ms`, 'info');
+    updateSequenceTable();
+    updateTimingTable();
+}, { passive: true });
+
+document.addEventListener('touchcancel', e => {
+    logEvent('touchcancel fired', 'info');
+}, { passive: true });
+
+// ---------- Pointer events ----------
+document.addEventListener('pointerdown', e => {
+    state.pointerIds.add(e.pointerId);
+    updatePointerTable(e);
+    updateIdTable();
+    logEvent(`pointerdown — id: ${e.pointerId}, type: ${e.pointerType}, isTrusted: ${e.isTrusted}`,
+             e.isTrusted ? 'good' : 'bad');
+}, { passive: true });
+
+document.addEventListener('pointermove', e => {
+    updatePointerTable(e);
+}, { passive: true });
+
+document.addEventListener('pointerup', e => {
+    updatePointerTable(e);
+    logEvent(`pointerup — id: ${e.pointerId}`, 'info');
+}, { passive: true });
+
+document.addEventListener('pointerover', e => {
+    logSequence(`pointerover`, 'good');
+}, { passive: true });
+
+document.addEventListener('pointerenter', e => {
+    logSequence(`pointerenter`, 'good');
+}, { passive: true });
+
+document.addEventListener('pointerout', e => {
+    logSequence(`pointerout`, 'info');
+}, { passive: true });
+
+document.addEventListener('pointerleave', e => {
+    logSequence(`pointerleave`, 'info');
+}, { passive: true });
+
+// ---------- Table updates ----------
+function updateTouchTable(e, t) {
+    touchTable.innerHTML = `
+        <tr><th>Field</th><th>Value</th></tr>
+        ${checkField('isTrusted', e.isTrusted, v => v === true)}
+        ${checkField('force', t.force, v => v > 0.01, 'should be > 0')}
+        ${checkField('radiusX', t.radiusX, v => v > 1, 'should be > 1px')}
+        ${checkField('radiusY', t.radiusY, v => v > 1, 'should be > 1px')}
+        ${checkField('rotationAngle', t.rotationAngle, v => v !== undefined, 'may be 0')}
+        ${checkField('altitudeAngle', t.altitudeAngle, v => v > 0 && v < 180, 'should not be 0 or 90')}
+        ${checkField('azimuthAngle', t.azimuthAngle, v => v !== 0, 'should not be 0')}
+        ${checkField('touchType', t.touchType, v => v === 'direct', 'should be "direct"')}
+    `;
+    updateSummary();
+}
+
+function updatePointerTable(e) {
+    pointerTable.innerHTML = `
+        <tr><th>Field</th><th>Value</th></tr>
+        ${checkField('isTrusted', e.isTrusted, v => v === true)}
+        ${checkField('pointerType', e.pointerType, v => v === 'touch', 'should be "touch"')}
+        ${checkField('tiltX', e.tiltX, v => v !== 0, 'should not be 0')}
+        ${checkField('tiltY', e.tiltY, v => v !== 0, 'should not be 0')}
+        ${checkField('twist', e.twist, v => v === 0, 'should be 0 for finger')}
+        ${checkField('width', e.width, v => v > 1)}
+        ${checkField('height', e.height, v => v > 1)}
+        ${checkField('pressure', e.pressure, v => v > 0.01)}
+        ${checkField('isPrimary', e.isPrimary, v => v === true)}
+    `;
+    updateSummary();
+}
+
+function updateSequenceTable() {
+    const expected = ['touchstart', 'touchmove', 'touchend'];
+    let html = '<tr><th>Expected Sequence</th><th>Status</th></tr>';
+    for (const ev of expected) {
+        const present = state.gestureEvents.includes(ev);
+        html += `<tr><td>${ev}</td><td class="${present ? 'pass' : 'fail'}">${present ? '✅' : '❌'}</td></tr>`;
+    }
+    sequenceTable.innerHTML = html;
+}
+
+function updateIdTable() {
+    document.getElementById('idUnique').textContent = state.pointerIds.size;
+    const last = Array.from(state.pointerIds).pop();
+    document.getElementById('idLast').textContent = last !== undefined ? last : '-';
+
+    const idStatus = document.getElementById('idStatus');
+    if (state.pointerIds.size === 0) {
+        idStatus.className = 'warn';
+        idStatus.textContent = 'No events yet';
+    } else if (state.pointerIds.size === 1 && last === 0) {
+        idStatus.className = 'fail';
+        idStatus.textContent = '❌ Always 0 — detectable';
+    } else if (state.pointerIds.size === 1) {
+        idStatus.className = 'warn';
+        idStatus.textContent = '⚠️ Only one ID seen — try more gestures';
+    } else {
+        idStatus.className = 'pass';
+        idStatus.textContent = '✅ Multiple IDs — looks realistic';
+    }
+}
+
+function updateTimingTable() {
+    if (state.gestureTimings.length === 0) {
+        timingTable.innerHTML = '<tr><th>Metric</th><th>Value</th></tr><tr><td colspan="2" class="warn">No gestures yet</td></tr>';
+        return;
+    }
+    const durations = state.gestureTimings;
+    const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+
+    let realism;
+    if (durations.length < 3) realism = '<span class="warn">⚠️ Need more samples</span>';
+    else if (avg > 150 && avg < 1200 && max - min > 50) realism = '<span class="pass">✅ Realistic</span>';
+    else realism = '<span class="fail">❌ Suspicious distribution</span>';
+
+    timingTable.innerHTML = `
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Gesture count</td><td>${durations.length}</td></tr>
+        <tr><td>Average duration</td><td>${avg.toFixed(0)}ms</td></tr>
+        <tr><td>Min duration</td><td>${min.toFixed(0)}ms</td></tr>
+        <tr><td>Max duration</td><td>${max.toFixed(0)}ms</td></tr>
+        <tr><td>Realism</td><td>${realism}</td></tr>
+    `;
+}
+
+function updateSummary() {
+    if (state.failCount > 0) {
+        summary.className = 'summary bad';
+        summary.textContent = `❌ FAIL — ${state.failCount} field(s) suspicious`;
+    } else if (state.passCount > 0) {
+        summary.className = 'summary ok';
+        summary.textContent = `✅ PASS — ${state.passCount} field(s) look real`;
+    } else {
+        summary.className = 'summary partial';
+        summary.textContent = 'Waiting for interaction';
+    }
+}
+</script>
+
+</body>
+</html>
